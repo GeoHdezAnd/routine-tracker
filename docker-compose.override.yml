@@ -1,0 +1,39 @@
+# Auto-merged by Compose on top of docker-compose.yml — no -f flag needed.
+# Switches api/web to their "dev" build stage and enables Compose Watch, so
+# `docker compose watch` gives hot-reload with zero local setup (no Node/pnpm
+# needed on the host, only Docker). Details: ARCHITECTURE_NOTES.md, section 10.
+services:
+  api:
+    build:
+      target: dev
+    environment:
+      NODE_ENV: development
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/api/src
+          target: /app/apps/api/src
+        - action: sync
+          path: ./packages/shared/src
+          target: /app/packages/shared/src
+        - action: rebuild
+          path: ./apps/api/package.json
+
+  web:
+    build:
+      target: dev
+    # ports is a list — Compose concatenates lists across files by default,
+    # so without !override this would ADD 5173 next to the base file's
+    # "8080:80" (which points at nginx, not present in the dev stage).
+    ports: !override
+      - "5173:5173"
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/web/src
+          target: /app/apps/web/src
+        - action: sync
+          path: ./packages/shared/src
+          target: /app/packages/shared/src
+        - action: rebuild
+          path: ./apps/web/package.json

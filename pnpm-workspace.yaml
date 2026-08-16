@@ -1,0 +1,11 @@
+# Declares this repo as a pnpm workspace (monorepo). Without this file,
+# pnpm treats apps/api, apps/web and packages/shared as unrelated projects.
+# is IMPORTANT has this configuraton before run pnpm install to generate pnpm-lock
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  '@prisma/engines': true
+  bcrypt: true
+  esbuild: true
+  prisma: true
