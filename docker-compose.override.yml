@@ -14,6 +14,9 @@ services:
           path: ./apps/api/src
           target: /app/apps/api/src
         - action: sync
+          path: ./apps/api/test
+          target: /app/apps/api/test
+        - action: sync
           path: ./packages/shared/src
           target: /app/packages/shared/src
         - action: rebuild
