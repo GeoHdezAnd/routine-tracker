@@ -60,3 +60,15 @@ export async function loginUser(email: string, password: string) {
 
   return { token };
 }
+
+export async function getUserById(id: string) {
+  return prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      email: true,
+      unitPreference: true,
+      createdAt: true,
+    },
+  });
+}

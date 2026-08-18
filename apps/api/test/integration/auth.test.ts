@@ -75,3 +75,39 @@ describe("POST /auth/login", () => {
     expect(response.status).toBe(401);
   });
 });
+
+describe("GET /auth/me", () => {
+  const email = "me-test@example.com";
+  const password = "supersecret123";
+
+  beforeEach(async () => {
+    await prisma.user.deleteMany({ where: { email } });
+  });
+
+  it("returns 401 when no Authorization header is sent", async () => {
+    const response = await request(createApp()).get("/auth/me");
+
+    expect(response.status).toBe(401);
+  });
+
+  it("returns 401 when the token is invalid", async () => {
+    const response = await request(createApp())
+      .get("/auth/me")
+      .set("Authorization", "Bearer garbage-token");
+
+    expect(response.status).toBe(401);
+  });
+
+  it("returns the current user for a valid token", async () => {
+    const app = createApp();
+    await request(app).post("/auth/register").send({ email, password });
+    const loginResponse = await request(app).post("/auth/login").send({ email, password });
+    const token = loginResponse.body.token;
+
+    const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ email, unitPreference: "KG" });
+    expect(response.body.passwordHash).toBeUndefined();
+  });
+});

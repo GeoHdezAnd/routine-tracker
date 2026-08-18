@@ -1,8 +1,10 @@
 import { Router } from "express";
 import * as z from "zod";
+import { requireAuth } from "../middleware/require-auth.js";
 import {
   EmailAlreadyRegisteredError,
   InvalidCredentialsError,
+  getUserById,
   loginUser,
   registerUser,
 } from "../services/auth.service.js";
@@ -36,6 +38,11 @@ authRouter.post("/register", async (req, res) => {
     }
     throw error;
   }
+});
+
+authRouter.get("/me", requireAuth, async (_req, res) => {
+  const user = await getUserById(res.locals.userId);
+  res.status(200).json(user);
 });
 
 authRouter.post("/login", async (req, res) => {
