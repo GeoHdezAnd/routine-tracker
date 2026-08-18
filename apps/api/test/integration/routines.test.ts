@@ -64,6 +64,31 @@ describe("POST /routines", () => {
 
     expect(response.status).toBe(400);
   });
+
+  it("creates a routine with muscleGroups", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const response = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Push Day", muscleGroups: ["Chest", "Shoulders"] });
+
+    expect(response.status).toBe(201);
+    expect(response.body.muscleGroups).toEqual(["Chest", "Shoulders"]);
+  });
+
+  it("defaults muscleGroups to an empty array when omitted", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const response = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Push Day" });
+
+    expect(response.body.muscleGroups).toEqual([]);
+  });
 });
 
 describe("GET /routines", () => {
@@ -198,6 +223,23 @@ describe("PATCH /routines/:id", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({ name: "Renamed" });
+  });
+
+  it("updates muscleGroups", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+    const createResponse = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Push Day" });
+
+    const response = await request(app)
+      .patch(`/routines/${createResponse.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ muscleGroups: ["Chest", "Triceps"] });
+
+    expect(response.status).toBe(200);
+    expect(response.body.muscleGroups).toEqual(["Chest", "Triceps"]);
   });
 
   it("returns 404 when editing another user's routine", async () => {

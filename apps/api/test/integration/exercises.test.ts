@@ -165,6 +165,21 @@ describe("GET /exercises filters and pagination", () => {
     expect(names.sort()).toEqual(["FILTER-test A", "FILTER-test B"]);
   });
 
+  it("filters by multiple comma-separated muscleGroups", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    await seedFilterExercises(app, token);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ muscleGroup: "Chest,Back" })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    const names = response.body.data.map((e: { name: string }) => e.name).sort();
+    expect(names).toEqual(["FILTER-test A", "FILTER-test B", "FILTER-test C", "FILTER-test D"]);
+  });
+
   it("filters by equipmentType", async () => {
     const app = createApp();
     const token = await registerAndLogin(app, email);
@@ -261,6 +276,54 @@ describe("GET /exercises filters and pagination", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.limit).toBe(100);
+  });
+});
+
+describe("GET /exercises/muscle-groups", () => {
+  const email = "exercises-musclegroups@example.com";
+
+  beforeEach(async () => {
+    await prisma.exercise.deleteMany({ where: { name: { startsWith: "MG-test" } } });
+    await prisma.user.deleteMany({ where: { email } });
+  });
+
+  it("returns distinct, alphabetically sorted muscle groups", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    await request(app).post("/exercises").set("Authorization", `Bearer ${token}`).send({
+      name: "MG-test A",
+      muscleGroup: "Zeta",
+      equipmentType: "Barbell",
+      movementType: "COMPOUND",
+    });
+    await request(app).post("/exercises").set("Authorization", `Bearer ${token}`).send({
+      name: "MG-test B",
+      muscleGroup: "Alpha",
+      equipmentType: "Barbell",
+      movementType: "COMPOUND",
+    });
+    await request(app).post("/exercises").set("Authorization", `Bearer ${token}`).send({
+      name: "MG-test C",
+      muscleGroup: "Alpha",
+      equipmentType: "Dumbbell",
+      movementType: "ISOLATION",
+    });
+
+    const response = await request(app).get("/exercises/muscle-groups").set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toContain("Alpha");
+    expect(response.body).toContain("Zeta");
+    expect(response.body.filter((g: string) => g === "Alpha")).toHaveLength(1);
+    const indexAlpha = response.body.indexOf("Alpha");
+    const indexZeta = response.body.indexOf("Zeta");
+    expect(indexAlpha).toBeLessThan(indexZeta);
+  });
+
+  it("returns 401 without a token", async () => {
+    const response = await request(createApp()).get("/exercises/muscle-groups");
+    expect(response.status).toBe(401);
   });
 });
 

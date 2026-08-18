@@ -21,7 +21,10 @@ export const routinesRouter = Router();
 const movementTypeEnum = z.enum(["COMPOUND", "ISOLATION"]);
 const goalEnum = z.enum(["STRENGTH", "HYPERTROPHY", "ENDURANCE"]);
 
-const routineSchema = z.object({ name: z.string().min(1) });
+const routineSchema = z.object({
+  name: z.string().min(1),
+  muscleGroups: z.array(z.string().min(1)).optional(),
+});
 const updateRoutineSchema = routineSchema.partial();
 
 const addRoutineExerciseSchema = z.object({

@@ -7,6 +7,7 @@ import {
   ExerciseNotFoundError,
   createExercise,
   deleteExercise,
+  getDistinctMuscleGroups,
   getExerciseById,
   listExercisesForUser,
   updateExercise,
@@ -58,8 +59,13 @@ exercisesRouter.get("/", async (req, res) => {
   const limit = Math.min(parsed.data.limit, MAX_LIMIT);
   const offset = parsed.data.offset;
 
+  const muscleGroup = parsed.data.muscleGroup
+    ?.split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
   const { data, total } = await listExercisesForUser(res.locals.userId, {
-    muscleGroup: parsed.data.muscleGroup,
+    muscleGroup,
     equipmentType: parsed.data.equipmentType,
     movementType: parsed.data.movementType,
     limit,
@@ -67,6 +73,11 @@ exercisesRouter.get("/", async (req, res) => {
   });
 
   res.status(200).json({ data, total, limit, offset });
+});
+
+exercisesRouter.get("/muscle-groups", async (req, res) => {
+  const muscleGroups = await getDistinctMuscleGroups(res.locals.userId);
+  res.status(200).json(muscleGroups);
 });
 
 exercisesRouter.get("/:id", async (req, res) => {

@@ -38,17 +38,34 @@ export async function createExercise(userId: string, input: ExerciseInput) {
 }
 
 type ListExercisesFilters = {
-  muscleGroup?: string;
+  muscleGroup?: string | string[];
   equipmentType?: string;
   movementType?: MovementType;
   limit: number;
   offset: number;
 };
 
+function muscleGroupFilter(muscleGroup: string | string[] | undefined) {
+  if (!muscleGroup || (Array.isArray(muscleGroup) && muscleGroup.length === 0)) return {};
+  if (Array.isArray(muscleGroup)) {
+    return muscleGroup.length > 1 ? { muscleGroup: { in: muscleGroup } } : { muscleGroup: muscleGroup[0]! };
+  }
+  return { muscleGroup };
+}
+
+export async function getDistinctMuscleGroups(userId: string) {
+  const rows = await prisma.exercise.findMany({
+    where: { OR: [{ ownerId: null }, { ownerId: userId }] },
+    select: { muscleGroup: true },
+    distinct: ["muscleGroup"],
+  });
+  return rows.map((row) => row.muscleGroup).sort((a, b) => a.localeCompare(b));
+}
+
 export async function listExercisesForUser(userId: string, filters: ListExercisesFilters) {
   const where = {
     OR: [{ ownerId: null }, { ownerId: userId }],
-    ...(filters.muscleGroup ? { muscleGroup: filters.muscleGroup } : {}),
+    ...muscleGroupFilter(filters.muscleGroup),
     ...(filters.equipmentType ? { equipmentType: filters.equipmentType } : {}),
     ...(filters.movementType ? { movementType: filters.movementType } : {}),
   };

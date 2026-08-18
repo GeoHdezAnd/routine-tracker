@@ -29,6 +29,7 @@ type RoutineExercise = {
 type RoutineDetail = {
   id: string;
   name: string;
+  muscleGroups: string[];
   exercises: RoutineExercise[];
 };
 
@@ -80,6 +81,11 @@ export function RoutineDetailPage() {
   const [editName, setEditName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
 
+  const [isEditingMuscleGroups, setIsEditingMuscleGroups] = useState(false);
+  const [editMuscleGroups, setEditMuscleGroups] = useState<string[]>([]);
+  const [muscleGroupsError, setMuscleGroupsError] = useState<string | null>(null);
+  const [viewAllExercises, setViewAllExercises] = useState(false);
+
   const {
     data: routine,
     isLoading,
@@ -90,10 +96,24 @@ export function RoutineDetailPage() {
     enabled: id !== undefined,
   });
 
+  const filterByMuscleGroups =
+    !viewAllExercises && (routine?.muscleGroups.length ?? 0) > 0 ? routine!.muscleGroups : null;
+
   const { data: exercisesData } = useQuery({
-    queryKey: ["exercises-for-routine", token],
-    queryFn: () => apiFetch<ExercisesResponse>("/exercises?limit=100", { token }),
+    queryKey: ["exercises-for-routine", token, filterByMuscleGroups],
+    queryFn: () => {
+      const query = filterByMuscleGroups
+        ? `?muscleGroup=${filterByMuscleGroups.map(encodeURIComponent).join(",")}&limit=100`
+        : "?limit=100";
+      return apiFetch<ExercisesResponse>(`/exercises${query}`, { token });
+    },
     enabled: showAddForm,
+  });
+
+  const { data: availableMuscleGroups } = useQuery({
+    queryKey: ["muscle-groups", token],
+    queryFn: () => apiFetch<string[]>("/exercises/muscle-groups", { token }),
+    enabled: isEditingMuscleGroups,
   });
 
   function invalidateRoutine() {
@@ -209,6 +229,36 @@ export function RoutineDetailPage() {
     updateName.mutate();
   }
 
+  const updateMuscleGroups = useMutation({
+    mutationFn: () =>
+      apiFetch(`/routines/${id}`, {
+        method: "PATCH",
+        token,
+        body: { muscleGroups: editMuscleGroups },
+      }),
+    onSuccess: () => {
+      setIsEditingMuscleGroups(false);
+      invalidateRoutine();
+    },
+    onError: (mutationError: unknown) => {
+      setMuscleGroupsError(
+        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
+      );
+    },
+  });
+
+  function startEditingMuscleGroups(current: string[]) {
+    setEditMuscleGroups(current);
+    setMuscleGroupsError(null);
+    setIsEditingMuscleGroups(true);
+  }
+
+  function toggleMuscleGroup(group: string) {
+    setEditMuscleGroups((current) =>
+      current.includes(group) ? current.filter((value) => value !== group) : [...current, group],
+    );
+  }
+
   function startEditing(routineExercise: RoutineExercise) {
     setEditingId(routineExercise.id);
     setEditGoal(routineExercise.goal);
@@ -290,6 +340,64 @@ export function RoutineDetailPage() {
               >
                 Iniciar sesión
               </Button>
+            </div>
+          )}
+
+          {isEditingMuscleGroups ? (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setMuscleGroupsError(null);
+                updateMuscleGroups.mutate();
+              }}
+              className="flex flex-col gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3"
+            >
+              <p className="text-sm font-medium">Grupos musculares</p>
+              <div className="flex flex-wrap gap-2">
+                {availableMuscleGroups?.map((group) => (
+                  <label key={group} className="flex items-center gap-1 text-sm text-neutral-300">
+                    <input
+                      type="checkbox"
+                      checked={editMuscleGroups.includes(group)}
+                      onChange={() => toggleMuscleGroup(group)}
+                    />
+                    {group}
+                  </label>
+                ))}
+              </div>
+              {muscleGroupsError && (
+                <p role="alert" className="text-sm text-red-400">
+                  {muscleGroupsError}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button type="submit" className="px-3 py-1 text-sm" disabled={updateMuscleGroups.isPending}>
+                  Guardar
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="px-3 py-1 text-sm"
+                  onClick={() => setIsEditingMuscleGroups(false)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-neutral-400">
+              <span>
+                {routine.muscleGroups.length > 0
+                  ? routine.muscleGroups.join(", ")
+                  : "Sin grupos musculares asignados"}
+              </span>
+              <button
+                type="button"
+                onClick={() => startEditingMuscleGroups(routine.muscleGroups)}
+                className="underline"
+              >
+                Editar
+              </button>
             </div>
           )}
 
@@ -439,6 +547,16 @@ export function RoutineDetailPage() {
                   ))}
                 </Select>
               </FieldLabel>
+              {routine.muscleGroups.length > 0 && (
+                <label className="flex items-center gap-1 text-sm text-neutral-400">
+                  <input
+                    type="checkbox"
+                    checked={viewAllExercises}
+                    onChange={(event) => setViewAllExercises(event.target.checked)}
+                  />
+                  Ver todos los ejercicios (no solo {routine.muscleGroups.join(", ")})
+                </label>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <FieldLabel>
                   Orden
