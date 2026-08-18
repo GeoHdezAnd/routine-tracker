@@ -1,4 +1,4 @@
-# Build multi-stage. Explicación completa: ARCHITECTURE_NOTES.md, sección 3.
+# Build multi-stage.
 
 # --- base: dependencias de sistema operativo compartidas por el resto de los stages ---
 FROM node:24-slim AS base
@@ -20,7 +20,9 @@ FROM deps AS dev
 COPY apps/api ./apps/api
 COPY packages/shared ./packages/shared
 WORKDIR /app/apps/api
-CMD ["pnpm", "dev"]
+# prisma generate corre acá (no en build-time de la imagen) porque recién en
+# el arranque del contenedor tenemos el DATABASE_URL real de docker-compose.yml.
+CMD ["sh", "-c", "pnpm exec prisma generate && pnpm dev"]
 
 # --- build: ahora sí copia el código fuente y compila ---
 FROM deps AS build

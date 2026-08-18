@@ -26,7 +26,7 @@ pnpm install
 Creá `apps/api/.env`:
 
 ```
-DATABASE_URL="postgresql://routine_tracker:routine_tracker@localhost:5432/routine_tracker"
+DATABASE_URL="postgresql://routine_tracker:routine_tracker@localhost:5433/routine_tracker"
 JWT_SECRET=""
 PORT=3000
 ```
