@@ -3,6 +3,7 @@ import * as z from "zod";
 import { requireAuth } from "../middleware/require-auth.js";
 import {
   ExerciseForbiddenError,
+  ExerciseInUseError,
   ExerciseNotFoundError,
   createExercise,
   deleteExercise,
@@ -22,6 +23,17 @@ const exerciseSchema = z.object({
 
 const updateExerciseSchema = exerciseSchema.partial();
 
+const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 20;
+
+const listExercisesQuerySchema = z.object({
+  muscleGroup: z.string().min(1).optional(),
+  equipmentType: z.string().min(1).optional(),
+  movementType: z.enum(["COMPOUND", "ISOLATION"]).optional(),
+  limit: z.coerce.number().int().min(1).default(DEFAULT_LIMIT),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
 exercisesRouter.use(requireAuth);
 
 exercisesRouter.post("/", async (req, res) => {
@@ -35,9 +47,25 @@ exercisesRouter.post("/", async (req, res) => {
   res.status(201).json(exercise);
 });
 
-exercisesRouter.get("/", async (_req, res) => {
-  const exercises = await listExercisesForUser(res.locals.userId);
-  res.status(200).json(exercises);
+exercisesRouter.get("/", async (req, res) => {
+  const parsed = listExercisesQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+
+  const limit = Math.min(parsed.data.limit, MAX_LIMIT);
+  const offset = parsed.data.offset;
+
+  const { data, total } = await listExercisesForUser(res.locals.userId, {
+    muscleGroup: parsed.data.muscleGroup,
+    equipmentType: parsed.data.equipmentType,
+    movementType: parsed.data.movementType,
+    limit,
+    offset,
+  });
+
+  res.status(200).json({ data, total, limit, offset });
 });
 
 exercisesRouter.get("/:id", async (req, res) => {
@@ -87,6 +115,10 @@ exercisesRouter.delete("/:id", async (req, res) => {
     }
     if (error instanceof ExerciseForbiddenError) {
       res.status(403).json({ error: error.message });
+      return;
+    }
+    if (error instanceof ExerciseInUseError) {
+      res.status(409).json({ error: error.message });
       return;
     }
     throw error;

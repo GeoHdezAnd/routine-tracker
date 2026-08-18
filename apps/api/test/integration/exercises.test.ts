@@ -14,6 +14,7 @@ describe("POST /exercises", () => {
   const email = "exercises-post@example.com";
 
   beforeEach(async () => {
+    await prisma.exercise.deleteMany({ where: { name: "Barbell Squat" } });
     await prisma.user.deleteMany({ where: { email } });
   });
 
@@ -110,10 +111,11 @@ describe("GET /exercises", () => {
 
     const response = await request(app)
       .get("/exercises")
+      .query({ limit: 100 })
       .set("Authorization", `Bearer ${ownerToken}`);
 
     expect(response.status).toBe(200);
-    const names = response.body.map((exercise: { name: string }) => exercise.name);
+    const names = response.body.data.map((exercise: { name: string }) => exercise.name);
     expect(names).toContain("GET-test Global Pushup");
     expect(names).toContain("GET-test Owner Curl");
     expect(names).not.toContain("GET-test Other Curl");
@@ -123,6 +125,142 @@ describe("GET /exercises", () => {
     const response = await request(createApp()).get("/exercises");
 
     expect(response.status).toBe(401);
+  });
+});
+
+describe("GET /exercises filters and pagination", () => {
+  const email = "exercises-filters@example.com";
+
+  beforeEach(async () => {
+    await prisma.exercise.deleteMany({ where: { name: { startsWith: "FILTER-test" } } });
+    await prisma.user.deleteMany({ where: { email } });
+  });
+
+  async function seedFilterExercises(app: ReturnType<typeof createApp>, token: string) {
+    const specs = [
+      { name: "FILTER-test A", muscleGroup: "Chest", equipmentType: "Barbell", movementType: "COMPOUND" },
+      { name: "FILTER-test B", muscleGroup: "Chest", equipmentType: "Dumbbell", movementType: "ISOLATION" },
+      { name: "FILTER-test C", muscleGroup: "Back", equipmentType: "Barbell", movementType: "COMPOUND" },
+      { name: "FILTER-test D", muscleGroup: "Back", equipmentType: "Machine", movementType: "ISOLATION" },
+      { name: "FILTER-test E", muscleGroup: "Legs", equipmentType: "Barbell", movementType: "COMPOUND" },
+    ];
+
+    for (const spec of specs) {
+      await request(app).post("/exercises").set("Authorization", `Bearer ${token}`).send(spec);
+    }
+  }
+
+  it("filters by muscleGroup", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    await seedFilterExercises(app, token);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ muscleGroup: "Chest" })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    const names = response.body.data.map((e: { name: string }) => e.name);
+    expect(names.sort()).toEqual(["FILTER-test A", "FILTER-test B"]);
+  });
+
+  it("filters by equipmentType", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    await seedFilterExercises(app, token);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ equipmentType: "Machine" })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    const names = response.body.data.map((e: { name: string }) => e.name);
+    expect(names).toEqual(["FILTER-test D"]);
+  });
+
+  it("filters by movementType", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    await seedFilterExercises(app, token);
+
+    // movementType alone also matches the global seeded catalog (~95 real
+    // exercises), so we raise the limit to fit everything on one page and
+    // narrow down to our own fixtures before asserting, instead of assuming
+    // an empty/isolated dataset.
+    const response = await request(app)
+      .get("/exercises")
+      .query({ movementType: "ISOLATION", limit: 100 })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    const names = response.body.data
+      .filter((e: { name: string }) => e.name.startsWith("FILTER-test"))
+      .map((e: { name: string }) => e.name)
+      .sort();
+    expect(names).toEqual(["FILTER-test B", "FILTER-test D"]);
+  });
+
+  it("combines multiple filters", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    await seedFilterExercises(app, token);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ muscleGroup: "Back", movementType: "COMPOUND" })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    const names = response.body.data.map((e: { name: string }) => e.name);
+    expect(names).toEqual(["FILTER-test C"]);
+  });
+
+  it("returns 400 for an invalid movementType", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ movementType: "FOO" })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(400);
+  });
+
+  it("paginates with limit/offset and reports total unfiltered by pagination", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    await seedFilterExercises(app, token);
+
+    const firstPage = await request(app)
+      .get("/exercises")
+      .query({ muscleGroup: "Chest", limit: 1, offset: 0 })
+      .set("Authorization", `Bearer ${token}`);
+    const secondPage = await request(app)
+      .get("/exercises")
+      .query({ muscleGroup: "Chest", limit: 1, offset: 1 })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(firstPage.body.data).toHaveLength(1);
+    expect(secondPage.body.data).toHaveLength(1);
+    expect(firstPage.body.data[0].name).not.toBe(secondPage.body.data[0].name);
+    expect(firstPage.body.total).toBe(2);
+    expect(secondPage.body.total).toBe(2);
+  });
+
+  it("clamps a limit above the maximum down to 100", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ limit: 500 })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.limit).toBe(100);
   });
 });
 
@@ -361,5 +499,78 @@ describe("DELETE /exercises/:id", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(response.status).toBe(404);
+  });
+
+  it("removes the exercise from any routine using it, without deleting the routine", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+    const me = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`);
+    const createResponse = await request(app)
+      .post("/exercises")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        name: "DELETE-test In Routine",
+        muscleGroup: "Legs",
+        equipmentType: "Barbell",
+        movementType: "COMPOUND",
+      });
+    const routine = await prisma.routine.create({
+      data: { userId: me.body.id, name: "DELETE-test Routine" },
+    });
+    await prisma.routineExercise.create({
+      data: {
+        routineId: routine.id,
+        exerciseId: createResponse.body.id,
+        order: 1,
+        goal: "STRENGTH",
+        targetSets: 3,
+        targetRepMin: 3,
+        targetRepMax: 6,
+      },
+    });
+
+    const response = await request(app)
+      .delete(`/exercises/${createResponse.body.id}`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(204);
+
+    const routineStillExists = await prisma.routine.findUnique({ where: { id: routine.id } });
+    expect(routineStillExists).not.toBeNull();
+    const remainingRoutineExercises = await prisma.routineExercise.findMany({
+      where: { routineId: routine.id },
+    });
+    expect(remainingRoutineExercises).toHaveLength(0);
+  });
+
+  it("returns 409 when the exercise has a logged set", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+    const me = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`);
+    const createResponse = await request(app)
+      .post("/exercises")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        name: "DELETE-test Logged",
+        muscleGroup: "Chest",
+        equipmentType: "Barbell",
+        movementType: "COMPOUND",
+      });
+    const session = await prisma.workoutSession.create({ data: { userId: me.body.id } });
+    await prisma.setLog.create({
+      data: {
+        sessionId: session.id,
+        exerciseId: createResponse.body.id,
+        setNumber: 1,
+        weightKg: 60,
+        reps: 5,
+      },
+    });
+
+    const response = await request(app)
+      .delete(`/exercises/${createResponse.body.id}`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(409);
   });
 });
