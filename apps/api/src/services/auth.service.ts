@@ -24,15 +24,26 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
-export async function registerUser(email: string, password: string) {
+type RegisterUserExtra = {
+  name?: string;
+  birthDate?: Date;
+};
+
+export async function registerUser(
+  email: string,
+  password: string,
+  extra: RegisterUserExtra = {},
+) {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
   try {
     return await prisma.user.create({
-      data: { email, passwordHash },
+      data: { email, passwordHash, name: extra.name, birthDate: extra.birthDate },
       select: {
         id: true,
         email: true,
+        name: true,
+        birthDate: true,
         unitPreference: true,
         createdAt: true,
       },
@@ -43,6 +54,20 @@ export async function registerUser(email: string, password: string) {
     }
     throw error;
   }
+}
+
+export function calculateAge(birthDate: Date, now: Date = new Date()): number {
+  let age = now.getFullYear() - birthDate.getFullYear();
+
+  const hasHadBirthdayThisYear =
+    now.getMonth() > birthDate.getMonth() ||
+    (now.getMonth() === birthDate.getMonth() && now.getDate() >= birthDate.getDate());
+
+  if (!hasHadBirthdayThisYear) {
+    age--;
+  }
+
+  return age;
 }
 
 export async function loginUser(email: string, password: string) {
@@ -67,6 +92,8 @@ export async function getUserById(id: string) {
     select: {
       id: true,
       email: true,
+      name: true,
+      birthDate: true,
       unitPreference: true,
       createdAt: true,
     },

@@ -41,6 +41,30 @@ describe("POST /auth/register", () => {
 
     expect(response.status).toBe(409);
   });
+
+  it("accepts optional name and birthDate and returns them", async () => {
+    const response = await request(createApp()).post("/auth/register").send({
+      email,
+      password: "supersecret123",
+      name: "Ada Lovelace",
+      birthDate: "1998-05-20",
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({ name: "Ada Lovelace" });
+    expect(response.body.birthDate).toBe("1998-05-20T00:00:00.000Z");
+  });
+
+  it("leaves name and birthDate as null when not provided", async () => {
+    const response = await request(createApp()).post("/auth/register").send({
+      email,
+      password: "supersecret123",
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.name).toBeNull();
+    expect(response.body.birthDate).toBeNull();
+  });
 });
 
 describe("POST /auth/login", () => {
@@ -109,5 +133,37 @@ describe("GET /auth/me", () => {
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({ email, unitPreference: "KG" });
     expect(response.body.passwordHash).toBeUndefined();
+  });
+
+  it("returns age null when birthDate was not provided", async () => {
+    const app = createApp();
+    await request(app).post("/auth/register").send({ email, password });
+    const loginResponse = await request(app).post("/auth/login").send({ email, password });
+    const token = loginResponse.body.token;
+
+    const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.birthDate).toBeNull();
+    expect(response.body.age).toBeNull();
+  });
+
+  it("returns name, birthDate and a computed age when birthDate was provided", async () => {
+    const app = createApp();
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+    const birthDate = tenYearsAgo.toISOString().slice(0, 10);
+
+    await request(app)
+      .post("/auth/register")
+      .send({ email, password, name: "Grace Hopper", birthDate });
+    const loginResponse = await request(app).post("/auth/login").send({ email, password });
+    const token = loginResponse.body.token;
+
+    const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe("Grace Hopper");
+    expect(response.body.age).toBe(10);
   });
 });

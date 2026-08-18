@@ -16,6 +16,9 @@ services:
         - action: sync
           path: ./apps/api/test
           target: /app/apps/api/test
+        - action: sync+restart
+          path: ./apps/api/prisma
+          target: /app/apps/api/prisma
         - action: sync
           path: ./packages/shared/src
           target: /app/packages/shared/src
