@@ -1,6 +1,7 @@
 import * as z from "zod";
 import { es } from "zod/locales";
 import express from "express";
+import cors from "cors";
 import { rateLimit } from "express-rate-limit";
 import { authRouter } from "./routes/auth.js";
 import { exercisesRouter } from "./routes/exercises.js";
@@ -15,6 +16,12 @@ const RATE_LIMIT_MESSAGE = "Demasiadas solicitudes, intente nuevamente más tard
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
+  app.use(
+    cors({
+      origin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  );
   app.use(express.json());
 
   const globalLimiter = rateLimit({

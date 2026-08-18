@@ -1,8 +1,16 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { RouterProvider } from "react-router";
+import { queryClient } from "./lib/query-client";
+import { AuthProvider } from "./lib/auth";
+import { router } from "./router";
+
 function App() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 text-neutral-100">
-      <h1 className="text-2xl font-semibold">Routine Tracker</h1>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -1,11 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import App from "./App";
 
 describe("App", () => {
-  it("renders the app title", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("shows the login screen when there is no session", async () => {
     render(<App />);
 
-    expect(screen.getByText("Routine Tracker")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Iniciar sesión" })).toBeInTheDocument();
   });
 });
