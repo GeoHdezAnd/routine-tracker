@@ -2,8 +2,8 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../lib/auth";
-import { apiFetch, ApiError } from "../lib/api";
+import { useAuth } from "../../lib/auth";
+import { apiFetch, ApiError } from "../../lib/api";
 
 type Routine = {
   id: string;

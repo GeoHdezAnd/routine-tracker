@@ -2,9 +2,9 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../lib/auth";
-import { apiFetch, ApiError } from "../lib/api";
-import { Button, Card, FieldLabel, Input, Select } from "../components/ui";
+import { useAuth } from "../../lib/auth";
+import { apiFetch, ApiError } from "../../lib/api";
+import { Button, Card, FieldLabel, Input, Select } from "../../components/ui";
 
 type SetLog = {
   id: string;
@@ -51,6 +51,13 @@ export function SessionDetailPage() {
   const [rir, setRir] = useState("");
   const [note, setNote] = useState("");
   const [logError, setLogError] = useState<string | null>(null);
+
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editWeightKg, setEditWeightKg] = useState("");
+  const [editReps, setEditReps] = useState("");
+  const [editRir, setEditRir] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
 
   const { data: session, isLoading } = useQuery({
     queryKey: ["session", id, token],
@@ -99,6 +106,38 @@ export function SessionDetailPage() {
     onSuccess: () => invalidateSession(),
   });
 
+  const updateLog = useMutation({
+    mutationFn: (logId: string) =>
+      apiFetch(`/sessions/${id}/logs/${logId}`, {
+        method: "PATCH",
+        token,
+        body: {
+          weightKg: Number(editWeightKg),
+          reps: Number(editReps),
+          rir: editRir ? Number(editRir) : undefined,
+          note: editNote || undefined,
+        },
+      }),
+    onSuccess: () => {
+      setEditingLogId(null);
+      invalidateSession();
+    },
+    onError: (mutationError: unknown) => {
+      setEditError(
+        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
+      );
+    },
+  });
+
+  function startEditingLog(log: SetLog) {
+    setEditingLogId(log.id);
+    setEditWeightKg(String(log.weightKg));
+    setEditReps(String(log.reps));
+    setEditRir(log.rir !== null ? String(log.rir) : "");
+    setEditNote(log.note ?? "");
+    setEditError(null);
+  }
+
   const finishSession = useMutation({
     mutationFn: () => apiFetch(`/sessions/${id}/finish`, { method: "POST", token }),
     onSuccess: () => invalidateSession(),
@@ -144,20 +183,100 @@ export function SessionDetailPage() {
               <li key={exId}>
                 <p className="mb-1 font-medium">{exerciseNames.get(exId) ?? exId}</p>
                 <ul className="flex flex-col gap-1">
-                  {logs.map((log) => (
-                    <Card key={log.id} className="flex items-center justify-between">
-                      <span className="text-sm">
-                        Serie {log.setNumber}: {log.weightKg}kg x {log.reps} reps
-                        {log.rir !== null ? ` · RIR ${log.rir}` : ""}
-                        {log.note ? ` · ${log.note}` : ""}
-                      </span>
-                      {!isFinished && (
-                        <Button variant="danger" className="shrink-0 px-2 py-1 text-xs" onClick={() => deleteLog.mutate(log.id)}>
-                          Borrar
-                        </Button>
-                      )}
-                    </Card>
-                  ))}
+                  {logs.map((log) =>
+                    editingLogId === log.id ? (
+                      <Card key={log.id} className="flex flex-col gap-2">
+                        <form
+                          className="flex flex-col gap-2"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            updateLog.mutate(log.id);
+                          }}
+                        >
+                          <div className="grid grid-cols-2 gap-2">
+                            <FieldLabel>
+                              Peso (kg)
+                              <Input
+                                type="number"
+                                inputMode="decimal"
+                                value={editWeightKg}
+                                onChange={(event) => setEditWeightKg(event.target.value)}
+                              />
+                            </FieldLabel>
+                            <FieldLabel>
+                              Reps
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                value={editReps}
+                                onChange={(event) => setEditReps(event.target.value)}
+                              />
+                            </FieldLabel>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <FieldLabel>
+                              RIR (opcional)
+                              <Input
+                                type="number"
+                                min={0}
+                                max={5}
+                                value={editRir}
+                                onChange={(event) => setEditRir(event.target.value)}
+                              />
+                            </FieldLabel>
+                            <FieldLabel>
+                              Nota (opcional)
+                              <Input value={editNote} onChange={(event) => setEditNote(event.target.value)} />
+                            </FieldLabel>
+                          </div>
+                          {editError && (
+                            <p role="alert" className="text-sm text-red-400">
+                              {editError}
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button type="submit" className="px-3 py-1 text-sm" disabled={updateLog.isPending}>
+                              Guardar
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="px-3 py-1 text-sm"
+                              onClick={() => setEditingLogId(null)}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </form>
+                      </Card>
+                    ) : (
+                      <Card key={log.id} className="flex items-center justify-between">
+                        <span className="text-sm">
+                          Serie {log.setNumber}: {log.weightKg}kg x {log.reps} reps
+                          {log.rir !== null ? ` · RIR ${log.rir}` : ""}
+                          {log.note ? ` · ${log.note}` : ""}
+                        </span>
+                        {!isFinished && (
+                          <div className="flex shrink-0 gap-2">
+                            <Button
+                              variant="secondary"
+                              className="px-2 py-1 text-xs"
+                              onClick={() => startEditingLog(log)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="danger"
+                              className="px-2 py-1 text-xs"
+                              onClick={() => deleteLog.mutate(log.id)}
+                            >
+                              Borrar
+                            </Button>
+                          </div>
+                        )}
+                      </Card>
+                    ),
+                  )}
                 </ul>
               </li>
             ))}

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
-import { renderWithProviders } from "../test/render-with-providers";
+import { renderWithProviders } from "../../test/render-with-providers";
 
 function stubMeAndRoutines(routines: Array<{ id: string; name: string; createdAt: string }>) {
   vi.stubGlobal(

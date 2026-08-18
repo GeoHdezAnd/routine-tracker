@@ -40,7 +40,10 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   const data: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorField = data && typeof data === "object" && "error" in data ? (data as { error: unknown }).error : null;
+    const errorField =
+      data && typeof data === "object" && "error" in data
+        ? (data as { error: unknown }).error
+        : null;
     throw new ApiError(extractErrorMessage(errorField));
   }
 

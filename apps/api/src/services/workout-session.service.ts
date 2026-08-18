@@ -23,11 +23,21 @@ export class SessionAlreadyFinishedError extends Error {
   }
 }
 
+export class RoutineHasNoExercisesError extends Error {
+  constructor() {
+    super("La rutina no tiene ejercicios, agregá al menos uno antes de iniciar una sesión");
+    this.name = "RoutineHasNoExercisesError";
+  }
+}
+
 type CreateSessionInput = { routineId?: string };
 
 export async function createSession(userId: string, input: CreateSessionInput) {
   if (input.routineId) {
-    await getRoutineById(userId, input.routineId);
+    const routine = await getRoutineById(userId, input.routineId);
+    if (routine!.exercises.length === 0) {
+      throw new RoutineHasNoExercisesError();
+    }
   }
 
   return prisma.workoutSession.create({

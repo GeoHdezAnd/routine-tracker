@@ -1,8 +1,8 @@
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "../lib/auth";
-import { apiFetch } from "../lib/api";
-import { Card } from "../components/ui";
+import { useAuth } from "../../lib/auth";
+import { apiFetch } from "../../lib/api";
+import { Card } from "../../components/ui";
 
 type RecentSession = {
   id: string;

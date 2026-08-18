@@ -3,9 +3,9 @@ import type { FormEvent } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MovementType } from "@routine-tracker/shared";
-import { useAuth } from "../lib/auth";
-import { apiFetch, ApiError } from "../lib/api";
-import { Button, Card, FieldLabel, Input, Select } from "../components/ui";
+import { useAuth } from "../../lib/auth";
+import { apiFetch, ApiError } from "../../lib/api";
+import { Button, Card, FieldLabel, Input, Select } from "../../components/ui";
 
 type Exercise = {
   id: string;

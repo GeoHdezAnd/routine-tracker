@@ -1,9 +1,9 @@
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useAuth } from "../lib/auth";
-import { apiFetch } from "../lib/api";
-import { Card } from "../components/ui";
+import { useAuth } from "../../lib/auth";
+import { apiFetch } from "../../lib/api";
+import { Card } from "../../components/ui";
 
 type HistoryEntry = {
   sessionId: string;

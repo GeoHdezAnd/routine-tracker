@@ -56,6 +56,11 @@ describe("POST /sessions", () => {
     const app = createApp();
     const token = await registerAndLogin(app, ownerEmail);
     const routineId = await createRoutine(app, token);
+    const exerciseId = await createExercise(app, token);
+    await request(app)
+      .post(`/routines/${routineId}/exercises`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ exerciseId, order: 1, goal: "HYPERTROPHY", targetSets: 3, targetRepMin: 8, targetRepMax: 12 });
 
     const response = await request(app)
       .post("/sessions")
@@ -64,6 +69,19 @@ describe("POST /sessions", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.routineId).toBe(routineId);
+  });
+
+  it("returns 409 when starting a session from a routine with no exercises", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+    const routineId = await createRoutine(app, token);
+
+    const response = await request(app)
+      .post("/sessions")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ routineId });
+
+    expect(response.status).toBe(409);
   });
 
   it("returns 404 for a non-existent routineId", async () => {

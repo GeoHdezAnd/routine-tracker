@@ -1,15 +1,15 @@
 import { createBrowserRouter } from "react-router";
 import type { RouteObject } from "react-router";
 import { ProtectedLayout } from "./components/ProtectedLayout";
-import { LoginPage } from "./pages/Login";
-import { RegisterPage } from "./pages/Register";
-import { RoutinesPage } from "./pages/Routines";
-import { RoutineDetailPage } from "./pages/RoutineDetail";
-import { ExercisesPage } from "./pages/Exercises";
-import { SessionsPage } from "./pages/Sessions";
-import { SessionDetailPage } from "./pages/SessionDetail";
-import { DashboardPage } from "./pages/Dashboard";
-import { ExerciseProgressPage } from "./pages/ExerciseProgress";
+import { LoginPage } from "./pages/Login/Login";
+import { RegisterPage } from "./pages/Register/Register";
+import { RoutinesPage } from "./pages/Routines/Routines";
+import { RoutineDetailPage } from "./pages/RoutineDetail/RoutineDetail";
+import { ExercisesPage } from "./pages/Exercises/Exercises";
+import { SessionsPage } from "./pages/Sessions/Sessions";
+import { SessionDetailPage } from "./pages/SessionDetail/SessionDetail";
+import { DashboardPage } from "./pages/Dashboard/Dashboard";
+import { ExerciseProgressPage } from "./pages/ExerciseProgress/ExerciseProgress";
 
 export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },

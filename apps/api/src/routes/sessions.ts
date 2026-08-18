@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { ExerciseNotFoundError } from "../services/exercise.service.js";
 import { RoutineNotFoundError } from "../services/routine.service.js";
 import {
+  RoutineHasNoExercisesError,
   SessionAlreadyFinishedError,
   SessionNotFoundError,
   SetLogNotFoundError,
@@ -53,6 +54,10 @@ sessionsRouter.post("/", async (req, res) => {
   } catch (error) {
     if (error instanceof RoutineNotFoundError) {
       res.status(404).json({ error: error.message });
+      return;
+    }
+    if (error instanceof RoutineHasNoExercisesError) {
+      res.status(409).json({ error: error.message });
       return;
     }
     throw error;

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
-import { renderWithProviders } from "../test/render-with-providers";
+import { renderWithProviders } from "../../test/render-with-providers";
 
 describe("LoginPage", () => {
   beforeEach(() => {

@@ -3,9 +3,9 @@ import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MovementType, TrainingGoal } from "@routine-tracker/shared";
-import { useAuth } from "../lib/auth";
-import { apiFetch, ApiError } from "../lib/api";
-import { Button, FieldLabel, Input, Select } from "../components/ui";
+import { useAuth } from "../../lib/auth";
+import { apiFetch, ApiError } from "../../lib/api";
+import { Button, FieldLabel, Input, Select } from "../../components/ui";
 
 type Exercise = {
   id: string;
@@ -69,6 +69,17 @@ export function RoutineDetailPage() {
   const [targetRepMax, setTargetRepMax] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editGoal, setEditGoal] = useState<TrainingGoal>("HYPERTROPHY");
+  const [editTargetSets, setEditTargetSets] = useState(3);
+  const [editTargetRepMin, setEditTargetRepMin] = useState("");
+  const [editTargetRepMax, setEditTargetRepMax] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+
   const {
     data: routine,
     isLoading,
@@ -102,7 +113,9 @@ export function RoutineDetailPage() {
       setTargetRepMax(String(suggestion.targetRepMax));
     },
     onError: (mutationError: unknown) => {
-      setAddError(mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado");
+      setAddError(
+        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
+      );
     },
   });
 
@@ -130,7 +143,9 @@ export function RoutineDetailPage() {
       setTargetRepMax("");
     },
     onError: (mutationError: unknown) => {
-      setAddError(mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado");
+      setAddError(
+        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
+      );
     },
   });
 
@@ -140,8 +155,72 @@ export function RoutineDetailPage() {
     onSuccess: () => invalidateRoutine(),
   });
 
+  const updateExercise = useMutation({
+    mutationFn: (routineExerciseId: string) =>
+      apiFetch(`/routines/${id}/exercises/${routineExerciseId}`, {
+        method: "PATCH",
+        token,
+        body: {
+          goal: editGoal,
+          targetSets: editTargetSets,
+          targetRepMin: Number(editTargetRepMin),
+          targetRepMax: Number(editTargetRepMax),
+        },
+      }),
+    onSuccess: () => {
+      setEditingId(null);
+      invalidateRoutine();
+    },
+    onError: (mutationError: unknown) => {
+      setEditError(
+        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
+      );
+    },
+  });
+
+  const updateName = useMutation({
+    mutationFn: () =>
+      apiFetch(`/routines/${id}`, {
+        method: "PATCH",
+        token,
+        body: { name: editName.trim() },
+      }),
+    onSuccess: () => {
+      setIsEditingName(false);
+      invalidateRoutine();
+    },
+    onError: (mutationError: unknown) => {
+      setNameError(
+        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
+      );
+    },
+  });
+
+  function startEditingName(currentName: string) {
+    setEditName(currentName);
+    setNameError(null);
+    setIsEditingName(true);
+  }
+
+  function handleNameSubmit(event: FormEvent) {
+    event.preventDefault();
+    setNameError(null);
+    if (!editName.trim()) return;
+    updateName.mutate();
+  }
+
+  function startEditing(routineExercise: RoutineExercise) {
+    setEditingId(routineExercise.id);
+    setEditGoal(routineExercise.goal);
+    setEditTargetSets(routineExercise.targetSets);
+    setEditTargetRepMin(String(routineExercise.targetRepMin));
+    setEditTargetRepMax(String(routineExercise.targetRepMax));
+    setEditError(null);
+  }
+
   const startSession = useMutation({
-    mutationFn: () => apiFetch<Session>("/sessions", { method: "POST", token, body: { routineId: id } }),
+    mutationFn: () =>
+      apiFetch<Session>("/sessions", { method: "POST", token, body: { routineId: id } }),
     onSuccess: (session) => navigate(`/sessions/${session.id}`),
   });
 
@@ -167,41 +246,177 @@ export function RoutineDetailPage() {
 
       {routine && (
         <>
-          <div className="flex items-center justify-between gap-4">
-            <h1 className="text-xl font-semibold">{routine.name}</h1>
-            <Button onClick={() => startSession.mutate()} disabled={startSession.isPending}>
-              Iniciar sesión
-            </Button>
-          </div>
+          {isEditingName ? (
+            <form onSubmit={handleNameSubmit} className="flex flex-col gap-2">
+              <Input
+                value={editName}
+                onChange={(event) => setEditName(event.target.value)}
+                autoFocus
+              />
+              {nameError && (
+                <p role="alert" className="text-sm text-red-400">
+                  {nameError}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button type="submit" className="px-3 py-1 text-sm" disabled={updateName.isPending}>
+                  Guardar
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="px-3 py-1 text-sm"
+                  onClick={() => setIsEditingName(false)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-semibold">{routine.name}</h1>
+                <button
+                  type="button"
+                  onClick={() => startEditingName(routine.name)}
+                  className="text-sm text-neutral-400 underline"
+                >
+                  Editar
+                </button>
+              </div>
+              <Button
+                onClick={() => startSession.mutate()}
+                disabled={startSession.isPending || routine.exercises.length === 0}
+              >
+                Iniciar sesión
+              </Button>
+            </div>
+          )}
 
           {routine.exercises.length === 0 ? (
-            <p className="text-neutral-400">Esta rutina todavía no tiene ejercicios.</p>
+            <p className="text-neutral-400">
+              Esta rutina todavía no tiene ejercicios. Agregá al menos uno para poder iniciar una sesión.
+            </p>
           ) : (
             <ul className="flex flex-col gap-3">
               {groupByOrder(routine.exercises).map((group) => (
-                <li key={group[0]!.id} className="rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3">
+                <li
+                  key={group[0]!.id}
+                  className="rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3"
+                >
                   <ul className="flex flex-col gap-2">
-                    {group.map((routineExercise) => (
-                      <li key={routineExercise.id} className="flex items-start justify-between gap-2">
-                        <span>
-                          <span className="font-medium">
-                            {routineExercise.supersetSlot !== null ? `A${routineExercise.supersetSlot} ` : ""}
-                            {routineExercise.exercise.name}
-                          </span>
-                          <span className="block text-sm text-neutral-400">
-                            {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
-                            {routineExercise.targetRepMax} reps · {GOAL_LABELS[routineExercise.goal]}
-                          </span>
-                        </span>
-                        <Button
-                          variant="danger"
-                          className="shrink-0 px-2 py-1 text-xs"
-                          onClick={() => removeExercise.mutate(routineExercise.id)}
+                    {group.map((routineExercise) =>
+                      editingId === routineExercise.id ? (
+                        <li
+                          key={routineExercise.id}
+                          className="flex flex-col gap-2 rounded-md border border-neutral-800 bg-neutral-950 px-3 py-3"
                         >
-                          Quitar
-                        </Button>
-                      </li>
-                    ))}
+                          <form
+                            className="flex flex-col gap-2"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              updateExercise.mutate(routineExercise.id);
+                            }}
+                          >
+                            <FieldLabel>
+                              Objetivo
+                              <Select
+                                value={editGoal}
+                                onChange={(event) => setEditGoal(event.target.value as TrainingGoal)}
+                              >
+                                <option value="STRENGTH">Fuerza</option>
+                                <option value="HYPERTROPHY">Hipertrofia</option>
+                                <option value="ENDURANCE">Resistencia</option>
+                              </Select>
+                            </FieldLabel>
+                            <FieldLabel>
+                              Series
+                              <Input
+                                type="number"
+                                min={1}
+                                value={editTargetSets}
+                                onChange={(event) => setEditTargetSets(Number(event.target.value))}
+                              />
+                            </FieldLabel>
+                            <div className="grid grid-cols-2 gap-2">
+                              <FieldLabel>
+                                Reps min
+                                <Input
+                                  type="number"
+                                  value={editTargetRepMin}
+                                  onChange={(event) => setEditTargetRepMin(event.target.value)}
+                                />
+                              </FieldLabel>
+                              <FieldLabel>
+                                Reps max
+                                <Input
+                                  type="number"
+                                  value={editTargetRepMax}
+                                  onChange={(event) => setEditTargetRepMax(event.target.value)}
+                                />
+                              </FieldLabel>
+                            </div>
+                            {editError && (
+                              <p role="alert" className="text-sm text-red-400">
+                                {editError}
+                              </p>
+                            )}
+                            <div className="flex gap-2">
+                              <Button
+                                type="submit"
+                                className="px-3 py-1 text-sm"
+                                disabled={updateExercise.isPending}
+                              >
+                                Guardar
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className="px-3 py-1 text-sm"
+                                onClick={() => setEditingId(null)}
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          </form>
+                        </li>
+                      ) : (
+                        <li
+                          key={routineExercise.id}
+                          className="flex items-start justify-between gap-2"
+                        >
+                          <span>
+                            <span className="font-medium">
+                              {routineExercise.supersetSlot !== null
+                                ? `A${routineExercise.supersetSlot} `
+                                : ""}
+                              {routineExercise.exercise.name}
+                            </span>
+                            <span className="block text-sm text-neutral-400">
+                              {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
+                              {routineExercise.targetRepMax} reps ·{" "}
+                              {GOAL_LABELS[routineExercise.goal]}
+                            </span>
+                          </span>
+                          <div className="flex shrink-0 gap-2">
+                            <Button
+                              variant="secondary"
+                              className="px-2 py-1 text-xs"
+                              onClick={() => startEditing(routineExercise)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="danger"
+                              className="px-2 py-1 text-xs"
+                              onClick={() => removeExercise.mutate(routineExercise.id)}
+                            >
+                              Quitar
+                            </Button>
+                          </div>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </li>
               ))}
@@ -209,7 +424,10 @@ export function RoutineDetailPage() {
           )}
 
           {showAddForm ? (
-            <form onSubmit={handleAddSubmit} className="flex flex-col gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3">
+            <form
+              onSubmit={handleAddSubmit}
+              className="flex flex-col gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3"
+            >
               <FieldLabel>
                 Ejercicio
                 <Select value={exerciseId} onChange={(event) => setExerciseId(event.target.value)}>
@@ -224,7 +442,12 @@ export function RoutineDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <FieldLabel>
                   Orden
-                  <Input type="number" min={1} value={order} onChange={(event) => setOrder(Number(event.target.value))} />
+                  <Input
+                    type="number"
+                    min={1}
+                    value={order}
+                    onChange={(event) => setOrder(Number(event.target.value))}
+                  />
                 </FieldLabel>
                 <FieldLabel>
                   Superserie (opcional)
@@ -239,7 +462,10 @@ export function RoutineDetailPage() {
               </div>
               <FieldLabel>
                 Objetivo
-                <Select value={goal} onChange={(event) => setGoal(event.target.value as TrainingGoal)}>
+                <Select
+                  value={goal}
+                  onChange={(event) => setGoal(event.target.value as TrainingGoal)}
+                >
                   <option value="STRENGTH">Fuerza</option>
                   <option value="HYPERTROPHY">Hipertrofia</option>
                   <option value="ENDURANCE">Resistencia</option>
@@ -257,11 +483,19 @@ export function RoutineDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <FieldLabel>
                   Reps min
-                  <Input type="number" value={targetRepMin} onChange={(event) => setTargetRepMin(event.target.value)} />
+                  <Input
+                    type="number"
+                    value={targetRepMin}
+                    onChange={(event) => setTargetRepMin(event.target.value)}
+                  />
                 </FieldLabel>
                 <FieldLabel>
                   Reps max
-                  <Input type="number" value={targetRepMax} onChange={(event) => setTargetRepMax(event.target.value)} />
+                  <Input
+                    type="number"
+                    value={targetRepMax}
+                    onChange={(event) => setTargetRepMax(event.target.value)}
+                  />
                 </FieldLabel>
               </div>
               <Button
