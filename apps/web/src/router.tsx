@@ -8,6 +8,8 @@ import { RoutineDetailPage } from "./pages/RoutineDetail";
 import { ExercisesPage } from "./pages/Exercises";
 import { SessionsPage } from "./pages/Sessions";
 import { SessionDetailPage } from "./pages/SessionDetail";
+import { DashboardPage } from "./pages/Dashboard";
+import { ExerciseProgressPage } from "./pages/ExerciseProgress";
 
 export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },
@@ -15,10 +17,11 @@ export const routes: RouteObject[] = [
   {
     element: <ProtectedLayout />,
     children: [
-      { path: "/", element: <RoutinesPage /> },
+      { path: "/", element: <DashboardPage /> },
       { path: "/routines", element: <RoutinesPage /> },
       { path: "/routines/:id", element: <RoutineDetailPage /> },
       { path: "/exercises", element: <ExercisesPage /> },
+      { path: "/exercises/:id/progress", element: <ExerciseProgressPage /> },
       { path: "/sessions", element: <SessionsPage /> },
       { path: "/sessions/:id", element: <SessionDetailPage /> },
     ],

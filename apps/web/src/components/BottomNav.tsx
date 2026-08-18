@@ -1,9 +1,10 @@
 import { NavLink } from "react-router";
 
 const LINKS = [
-  { to: "/routines", label: "Rutinas" },
-  { to: "/exercises", label: "Ejercicios" },
-  { to: "/sessions", label: "Sesiones" },
+  { to: "/", label: "Inicio", end: true },
+  { to: "/routines", label: "Rutinas", end: false },
+  { to: "/exercises", label: "Ejercicios", end: false },
+  { to: "/sessions", label: "Sesiones", end: false },
 ];
 
 export function BottomNav() {
@@ -14,6 +15,7 @@ export function BottomNav() {
           <li key={link.to} className="flex-1">
             <NavLink
               to={link.to}
+              end={link.end}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-0.5 py-3 text-sm ${
                   isActive ? "text-neutral-100" : "text-neutral-500"

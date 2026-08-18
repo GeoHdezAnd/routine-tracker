@@ -11,6 +11,7 @@ import {
   listExercisesForUser,
   updateExercise,
 } from "../services/exercise.service.js";
+import { getExerciseProgress } from "../services/progress.service.js";
 
 export const exercisesRouter = Router();
 
@@ -72,6 +73,19 @@ exercisesRouter.get("/:id", async (req, res) => {
   try {
     const exercise = await getExerciseById(res.locals.userId, req.params.id);
     res.status(200).json(exercise);
+  } catch (error) {
+    if (error instanceof ExerciseNotFoundError) {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
+});
+
+exercisesRouter.get("/:id/progress", async (req, res) => {
+  try {
+    const progress = await getExerciseProgress(res.locals.userId, req.params.id);
+    res.status(200).json(progress);
   } catch (error) {
     if (error instanceof ExerciseNotFoundError) {
       res.status(404).json({ error: error.message });

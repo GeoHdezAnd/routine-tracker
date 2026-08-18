@@ -91,16 +91,20 @@ export function RoutineDetailPage() {
 
   const selectedExercise = exercisesData?.data.find((exercise) => exercise.id === exerciseId);
 
-  function fillSuggestion() {
-    if (!selectedExercise) return;
-    apiFetch<{ targetRepMin: number; targetRepMax: number }>(
-      `/routines/rep-range-suggestion?movementType=${selectedExercise.movementType}&goal=${goal}`,
-      { token },
-    ).then((suggestion) => {
+  const repRangeSuggestion = useMutation({
+    mutationFn: () =>
+      apiFetch<{ targetRepMin: number; targetRepMax: number }>(
+        `/routines/rep-range-suggestion?movementType=${selectedExercise?.movementType}&goal=${goal}`,
+        { token },
+      ),
+    onSuccess: (suggestion) => {
       setTargetRepMin(String(suggestion.targetRepMin));
       setTargetRepMax(String(suggestion.targetRepMax));
-    });
-  }
+    },
+    onError: (mutationError: unknown) => {
+      setAddError(mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado");
+    },
+  });
 
   const addExercise = useMutation({
     mutationFn: () =>
@@ -260,7 +264,12 @@ export function RoutineDetailPage() {
                   <Input type="number" value={targetRepMax} onChange={(event) => setTargetRepMax(event.target.value)} />
                 </FieldLabel>
               </div>
-              <Button type="button" variant="secondary" onClick={fillSuggestion} disabled={!selectedExercise}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => repRangeSuggestion.mutate()}
+                disabled={!selectedExercise || repRangeSuggestion.isPending}
+              >
                 Usar sugerencia
               </Button>
               {addError && (

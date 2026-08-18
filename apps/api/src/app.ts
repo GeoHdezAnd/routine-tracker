@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import { rateLimit } from "express-rate-limit";
 import { authRouter } from "./routes/auth.js";
+import { dashboardRouter } from "./routes/dashboard.js";
 import { exercisesRouter } from "./routes/exercises.js";
 import { routinesRouter } from "./routes/routines.js";
 import { sessionsRouter } from "./routes/sessions.js";
@@ -51,6 +52,7 @@ export function createApp() {
   app.use("/exercises", exercisesRouter);
   app.use("/routines", routinesRouter);
   app.use("/sessions", sessionsRouter);
+  app.use("/dashboard", dashboardRouter);
 
   return app;
 }

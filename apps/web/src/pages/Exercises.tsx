@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MovementType } from "@routine-tracker/shared";
 import { useAuth } from "../lib/auth";
@@ -178,6 +179,9 @@ export function ExercisesPage() {
                   <p className="text-sm text-neutral-400">
                     {exercise.muscleGroup} · {exercise.equipmentType} · {MOVEMENT_LABELS[exercise.movementType]}
                   </p>
+                  <Link to={`/exercises/${exercise.id}/progress`} className="text-xs text-neutral-500 underline">
+                    Ver progreso
+                  </Link>
                 </div>
               )}
               {isOwn && !isEditing && (
