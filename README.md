@@ -49,6 +49,35 @@ pnpm dev:api   # :3000
 pnpm dev:web   # :5173
 ```
 
+## Base de datos: migraciones y seed
+
+La primera vez que levantás el proyecto (o cuando bajás una migración
+nueva) hay que aplicar el schema y, opcionalmente, poblar el catálogo de
+ejercicios globales. `postgres` tiene que estar arriba y healthy antes de
+correr esto.
+
+Con Docker:
+
+```bash
+docker compose exec api pnpm exec prisma migrate deploy
+docker compose exec api pnpm run prisma:seed
+```
+
+Sin Docker (con `apps/api/.env` configurado y `nvm use` ya corrido):
+
+```bash
+pnpm --filter @routine-tracker/api prisma:migrate
+pnpm --filter @routine-tracker/api prisma:seed
+```
+
+`prisma:seed` carga ~95 ejercicios en español (catálogo curado desde la
+API de [wger.de](https://wger.de), snapshot versionado en
+`apps/api/prisma/seed-data/wger-exercises.json`, sin depender de red en
+tiempo de build/CI) con `ownerId: null` (visibles para cualquier usuario,
+no editables). Es idempotente — cada corrida borra los ejercicios
+globales existentes y reinserta el set curado desde cero, sin tocar
+ejercicios custom de usuarios reales (`ownerId` no nulo).
+
 ## Scripts
 
 | Comando           | Descripción                              |

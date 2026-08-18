@@ -1,5 +1,7 @@
 import express from "express";
 import { authRouter } from "./routes/auth.js";
+import { exercisesRouter } from "./routes/exercises.js";
+import { routinesRouter } from "./routes/routines.js";
 
 export function createApp() {
   const app = express();
@@ -10,6 +12,8 @@ export function createApp() {
   });
 
   app.use("/auth", authRouter);
+  app.use("/exercises", exercisesRouter);
+  app.use("/routines", routinesRouter);
 
   return app;
 }

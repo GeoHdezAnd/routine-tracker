@@ -1,0 +1,1254 @@
+{
+  "meta": {
+    "generatedAt": "2026-08-18",
+    "sources": [
+      "wger.de REST API v2 — GET /api/v2/exerciseinfo/?language=4&limit=100 (paginated), GET /api/v2/exercisecategory/, GET /api/v2/equipment/ (name -> Spanish translation, muscleGroup/equipmentType)",
+      "github.com/yuhonas/free-exercise-db dist/exercises.json — mechanic field (compound/isolation), cross-referenced by normalized name match, used to resolve movementType (not provided by wger)"
+    ],
+    "rawWgerExerciseCount": 873,
+    "curatedCount": 95,
+    "curationCriteria": "Filtered wger exerciseinfo results (Cardio category excluded — not weight/rep based) by a whitelist of standard strength-training movement keywords (squat, press, row, curl, extension, raise, pulldown, deadlift, etc.), then hand-picked ~95 exercises to give full coverage of all 7 strength muscle groups (Legs, Back, Chest, Shoulders, Arms, Abs, Calves) across the most common equipment types (barbell, dumbbell, machine, cable/pulley, bodyweight, pull-up bar, EZ-bar), preferring one clean canonical name per movement pattern over near-duplicate variants.",
+    "movementTypeResolution": "Primary: normalized-name match against free-exercise-db mechanic field (compound/isolation), used for ~33% of entries. Fallback heuristic for the rest (no confident match): exercise name containing single-joint keywords (curl, extension, raise, fly, kickback, shrug, adduction, abduction, crossover) => ISOLATION; name containing multi-joint keywords (squat, deadlift, press, row, pull-up, dip, clean, snatch, thruster, lunge, step-up, good morning, hip thrust, pulldown, pullover) => COMPOUND; otherwise defaults to ISOLATION. One manual override: Cable Curls (free-exercise-db mis-tags the closest match, High Cable Curls, as compound; a single-joint elbow-flexion curl is isolation by convention).",
+    "spanishTranslationCoverage": "644/873 (73.8%) wger exercises have an official Spanish (language=4) translation. Entries without one fall back to the English name — flagged via _source.nameFallbackToEnglish in this file (4/95 in the curated set: Stiff-legged Deadlifts, Dumbbell Split Squat, Face Pulls (Bodyweight Doorframe/Towel), Cable Curls).",
+    "equipmentDataQuality": "wger equipment tags are user-submitted and frequently empty/incomplete even for well-known machine exercises (e.g. Leg Press, Hack Squat, Lat Pulldown, Chest Press Machine came back with an empty equipment array). For entries where the tag was empty or clearly wrong, equipmentType was manually corrected based on common gym knowledge — flagged via _source.equipmentOverridden.",
+    "license": "Exercise names sourced from wger.de, CC-BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). movementType cross-referenced from free-exercise-db (Unlicense/public domain).",
+    "note": "_source fields are provenance metadata for maintainers only (wger id, original English name, how movementType/equipmentType were resolved) — not written to the database. The Exercise model intentionally has no externalId column (YAGNI for this one-off seed); re-syncing later means re-running the fetch+curation script and re-generating this file."
+  },
+  "exercises": [
+    {
+      "name": "Sentadillas",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 615,
+        "nameEn": "Squats",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Sentadilla Frontal",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 257,
+        "nameEn": "Front Squats",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Sentadilla búlgara con mancuernas",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1706,
+        "nameEn": "Bulgarian Squat with Dumbbells",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Sentadilla con disco",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 203,
+        "nameEn": "Dumbbell Goblet Squat",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Sentadillas Hack",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Máquina",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1414,
+        "nameEn": "Hack Squats",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Prensa de piernas",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Máquina",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 371,
+        "nameEn": "Leg Press",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Curl cuadriceps",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Máquina",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 369,
+        "nameEn": "Leg Extension",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Curl de piernas (tumbado)",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Máquina",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 365,
+        "nameEn": "Leg Curls (laying)",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Peso muerto rumano con barra",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 507,
+        "nameEn": "Romanian Deadlift",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Peso muerto sumo",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 630,
+        "nameEn": "Sumo Deadlift",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Stiff-legged Deadlifts",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 627,
+        "nameEn": "Stiff-legged Deadlifts",
+        "nameFallbackToEnglish": true,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Hip thrust con barra",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 294,
+        "nameEn": "Hip Thrust",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Puente de glúteos",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 265,
+        "nameEn": "Glute Bridge",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Zancadas Caminando con Mancuernas",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 206,
+        "nameEn": "Dumbbell Lunges Walking",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Subida a peldaño",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Banco",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 981,
+        "nameEn": "Step-ups",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Good Morning",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Peso corporal",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1392,
+        "nameEn": "Good Morning",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Sentadillas en pistol izquierda",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Peso corporal",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 456,
+        "nameEn": "Pistol Squat",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl Nórdico",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 910,
+        "nameEn": "Nordic Curl",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Abducción de cadera sentado",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1672,
+        "nameEn": "Seated Hip Abduction",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Aducción de Cadera en Máquina",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Máquina",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 12,
+        "nameEn": "Seated Hip Adduction",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Dumbbell Split Squat",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1366,
+        "nameEn": "Dumbbell Split Squat",
+        "nameFallbackToEnglish": true,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Asiento en pared",
+      "muscleGroup": "Piernas",
+      "equipmentType": "Peso corporal",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 718,
+        "nameEn": "Wall Squat",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Elevación de talón de pie",
+      "muscleGroup": "Pantorrillas",
+      "equipmentType": "Máquina",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 622,
+        "nameEn": "Standing Calf Raises",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Elevación de talón sentados",
+      "muscleGroup": "Pantorrillas",
+      "equipmentType": "Máquina",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 590,
+        "nameEn": "Sitting Calf Raises",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Gemelos en prensa",
+      "muscleGroup": "Pantorrillas",
+      "equipmentType": "Máquina",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 146,
+        "nameEn": "Calf Press Using Leg Press Machine",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Elevación de gemelos sentado con mancuerna",
+      "muscleGroup": "Pantorrillas",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1620,
+        "nameEn": "Seated Dumbbell Calf Raise",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Peso Muerto Convencional",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 184,
+        "nameEn": "Deadlifts",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Remo con barra (agarre prono)",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1698,
+        "nameEn": "Barbell Row (Overhand)",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Remo Pendlay",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 448,
+        "nameEn": "Pendelay Rows",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Remo en \"T\"",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 513,
+        "nameEn": "Rowing, T-bar",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Remo gironda agarre cerrado",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1117,
+        "nameEn": "Seated Cable Row",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Remo pesado a una mano",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1701,
+        "nameEn": "One-Arm Heavy Row",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Dominadas",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Barra de dominadas",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 475,
+        "nameEn": "Pull-ups",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Dominadas con Agarre Supino",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Barra de dominadas",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 152,
+        "nameEn": "Chin Up",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Jalón al pecho",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 355,
+        "nameEn": "Lat Pull Down (Straight Back)",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Jalón al Pecho con Agarre Cerrado",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 158,
+        "nameEn": "Close-grip Lat Pull Down",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Jalón con agarre ancho",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 723,
+        "nameEn": "Wide-grip Pulldown",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Jalón con brazos rectos (polea)",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1726,
+        "nameEn": "Straight-Arm Pulldown (Cable)",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Hiperextensiones",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 301,
+        "nameEn": "Hyperextensions",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Encogimientos de hombros con barra",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Barra",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 571,
+        "nameEn": "Shrugs, Barbells",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Encogimientos de hombros con mancuernas",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 572,
+        "nameEn": "Shrugs, Dumbbells",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Remo con mancuernas en banco inclinado",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 310,
+        "nameEn": "Incline Dumbbell Row",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Face Pulls (Bodyweight Doorframe/Towel)",
+      "muscleGroup": "Espalda",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 2503,
+        "nameEn": "Face Pulls (Bodyweight Doorframe/Towel)",
+        "nameFallbackToEnglish": true,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de Banca",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 73,
+        "nameEn": "Bench Press",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de banca inclinado",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 538,
+        "nameEn": "Incline Bench Press - Barbell",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de Banca Declinado con Barra",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 185,
+        "nameEn": "Decline Bench Press Barbell",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de banca con mancuernas",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 75,
+        "nameEn": "Benchpress Dumbbells",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press inclinado con mancuernas",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 537,
+        "nameEn": "Incline Bench Press - Dumbbell",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Aperturas con Mancuernas",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 238,
+        "nameEn": "Fly With Dumbbells",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Cruce de Poleas para Pecho",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 237,
+        "nameEn": "Fly With Cable",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de Pecho en Máquina",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Máquina",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 129,
+        "nameEn": "Chest Press",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Push-Up",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Peso corporal",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1551,
+        "nameEn": "Push-Up",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Flexiones inclinadas",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Banco inclinado",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1111,
+        "nameEn": "Push-Ups | Incline",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Fondos en Paralelas",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Peso corporal",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 194,
+        "nameEn": "Dips",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Aperturas en Máquina para Pecho",
+      "muscleGroup": "Pecho",
+      "equipmentType": "Máquina",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 926,
+        "nameEn": "Machine chest fly",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Press de barra por encima de la cabeza",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1893,
+        "nameEn": "Overhead Barbell Press",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press Militar mancuerna",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 567,
+        "nameEn": "Shoulder Press, Dumbbells",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press Arnold",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 20,
+        "nameEn": "Arnold Shoulder Press",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de hombro con maquina",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Máquina",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 543,
+        "nameEn": "Shoulder Press, on Machine",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Elevación lateral con mancuernas",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 348,
+        "nameEn": "Lateral Raises",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Elevación lateral en polea alta",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1882,
+        "nameEn": "High-Cable Lateral Raise",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Elevaciones frontales",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Barra",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 256,
+        "nameEn": "Front Raises",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Elevaciones de deltoides posterior",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 487,
+        "nameEn": "Rear Delt Raises",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Aperturas Posteriores en Polea",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 822,
+        "nameEn": "Cable Rear Delt Fly",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Remo al mentón con mancuernas",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 694,
+        "nameEn": "Upright Row w/ Dumbbells",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de hombro con mancuernas",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 478,
+        "nameEn": "Push Press",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": true
+      }
+    },
+    {
+      "name": "Encogimiento de hombros",
+      "muscleGroup": "Hombros",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 570,
+        "nameEn": "Shoulder Shrug",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl con barra",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 91,
+        "nameEn": "Biceps Curls With Barbell",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl con mancuerna",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1931,
+        "nameEn": "Dumbbell Curl",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl Martillo",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 272,
+        "nameEn": "Hammer Curls",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl en banco Scott",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra Z",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 465,
+        "nameEn": "Preacher Curls",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Cable Curls",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1531,
+        "nameEn": "Cable Curls",
+        "nameFallbackToEnglish": true,
+        "movementTypeSource": "manual-override",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl de concentración con mancuerna",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 202,
+        "nameEn": "Dumbbell Concentration Curl",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl de biceps con barra Z",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra Z",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 94,
+        "nameEn": "Biceps Curls With SZ-bar",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Press de Banca con Agarre Cerrado",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 76,
+        "nameEn": "Bench Press Narrow Grip",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Extensiones de tríceps tumbado",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1480,
+        "nameEn": "Lying Triceps Extensions",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Extensión de tríceps por encima de la cabeza",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra Z",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1519,
+        "nameEn": "Overhead Triceps Extension",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Extension de triceps polea",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 659,
+        "nameEn": "Triceps Extensions on Cable",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Contragolpe de tríceps con mancuernas",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 655,
+        "nameEn": "Tricep Dumbbell Kickback",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Fondos entre Bancos",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Banco",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 197,
+        "nameEn": "Dips Between Two Benches",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl de Muñeca con Barra (Agarre Supino)",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 51,
+        "nameEn": "Barbell Wrist Curl",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl invertido",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 495,
+        "nameEn": "Reverse Curl",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Curl de bíceps con barra en agarre invertido",
+      "muscleGroup": "Brazos",
+      "equipmentType": "Barra",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1290,
+        "nameEn": "Reverse Grip Barbell Curls",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Plancha frontal",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1307,
+        "nameEn": "Front Plank",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Plancha de lado izquierdo",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 580,
+        "nameEn": "Side Plank",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Encogimientos abdominales",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Colchoneta",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 167,
+        "nameEn": "Crunches",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Encogimientos abdominales en polea",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 173,
+        "nameEn": "Crunches With Cable",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Elevaciones de Piernas (Colgado)",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Barra de dominadas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 283,
+        "nameEn": "Hanging Leg Raises",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Elevaciones de piernas tumbado",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Colchoneta",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 377,
+        "nameEn": "Leg Raises, Lying",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Abdominales rusas",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Mancuerna",
+      "movementType": "COMPOUND",
+      "_source": {
+        "wgerId": 1193,
+        "nameEn": "Russian Twist",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Crunch inverso",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1772,
+        "nameEn": "Reverse crunch",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Abdominales completos",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 591,
+        "nameEn": "Sit-ups",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Crunch con peso",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Mancuerna",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1648,
+        "nameEn": "Weighted Crunch",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Pallof Press",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Máquina de poleas",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1194,
+        "nameEn": "Pallof Press",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "free-exercise-db",
+        "equipmentOverridden": false
+      }
+    },
+    {
+      "name": "Abdominales en bicicleta",
+      "muscleGroup": "Abdominales",
+      "equipmentType": "Peso corporal",
+      "movementType": "ISOLATION",
+      "_source": {
+        "wgerId": 1412,
+        "nameEn": "bicycle crunches",
+        "nameFallbackToEnglish": false,
+        "movementTypeSource": "heuristic",
+        "equipmentOverridden": false
+      }
+    }
+  ]
+}
