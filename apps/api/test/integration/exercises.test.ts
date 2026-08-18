@@ -420,6 +420,9 @@ describe("DELETE /exercises/:id", () => {
   const otherEmail = "exercises-delete-other@example.com";
 
   beforeEach(async () => {
+    // SetLog.exercise is Restrict: clear logs BEFORE deleting the exercise,
+    // or a leftover SetLog from the "logged set" test below blocks it.
+    await prisma.setLog.deleteMany({ where: { exercise: { name: { startsWith: "DELETE-test" } } } });
     await prisma.exercise.deleteMany({ where: { name: { startsWith: "DELETE-test" } } });
     await prisma.user.deleteMany({ where: { email: { in: [ownerEmail, otherEmail] } } });
   });

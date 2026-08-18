@@ -23,14 +23,14 @@ export function suggestRepRange(movementType: MovementType, goal: Goal) {
 
 export class RoutineNotFoundError extends Error {
   constructor() {
-    super("Routine not found");
+    super("Rutina no encontrada");
     this.name = "RoutineNotFoundError";
   }
 }
 
 export class RoutineExerciseNotFoundError extends Error {
   constructor() {
-    super("Routine exercise not found");
+    super("Ejercicio de la rutina no encontrado");
     this.name = "RoutineExerciseNotFoundError";
   }
 }

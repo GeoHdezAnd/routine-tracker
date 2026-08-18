@@ -12,21 +12,21 @@ type ExerciseInput = {
 
 export class ExerciseNotFoundError extends Error {
   constructor() {
-    super("Exercise not found");
+    super("Ejercicio no encontrado");
     this.name = "ExerciseNotFoundError";
   }
 }
 
 export class ExerciseForbiddenError extends Error {
   constructor() {
-    super("You do not have permission to modify this exercise");
+    super("No tiene permiso para modificar este ejercicio");
     this.name = "ExerciseForbiddenError";
   }
 }
 
 export class ExerciseInUseError extends Error {
   constructor() {
-    super("Exercise has logged sets and cannot be deleted");
+    super("El ejercicio tiene series registradas y no se puede eliminar");
     this.name = "ExerciseInUseError";
   }
 }

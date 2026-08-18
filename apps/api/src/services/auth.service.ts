@@ -12,14 +12,14 @@ if (!jwtSecret) {
 
 export class EmailAlreadyRegisteredError extends Error {
   constructor() {
-    super("Email is already registered");
+    super("El email ya está registrado");
     this.name = "EmailAlreadyRegisteredError";
   }
 }
 
 export class InvalidCredentialsError extends Error {
   constructor() {
-    super("Invalid email or password");
+    super("Email o contraseña inválidos");
     this.name = "InvalidCredentialsError";
   }
 }
