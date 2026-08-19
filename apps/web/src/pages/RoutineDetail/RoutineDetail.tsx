@@ -268,6 +268,23 @@ export function RoutineDetailPage() {
     setEditError(null);
   }
 
+  const editRepRangeSuggestion = useMutation({
+    mutationFn: (movementType: MovementType) =>
+      apiFetch<{ targetRepMin: number; targetRepMax: number }>(
+        `/routines/rep-range-suggestion?movementType=${movementType}&goal=${editGoal}`,
+        { token },
+      ),
+    onSuccess: (suggestion) => {
+      setEditTargetRepMin(String(suggestion.targetRepMin));
+      setEditTargetRepMax(String(suggestion.targetRepMax));
+    },
+    onError: (mutationError: unknown) => {
+      setEditError(
+        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
+      );
+    },
+  });
+
   const startSession = useMutation({
     mutationFn: () =>
       apiFetch<Session>("/sessions", { method: "POST", token, body: { routineId: id } }),
@@ -464,6 +481,15 @@ export function RoutineDetailPage() {
                                 />
                               </FieldLabel>
                             </div>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="px-3 py-1 text-sm"
+                              onClick={() => editRepRangeSuggestion.mutate(routineExercise.exercise.movementType)}
+                              disabled={editRepRangeSuggestion.isPending}
+                            >
+                              Usar sugerencia
+                            </Button>
                             {editError && (
                               <p role="alert" className="text-sm text-red-400">
                                 {editError}
