@@ -299,14 +299,14 @@ export function RoutineDetailPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-neutral-950 px-4 py-8 text-neutral-100">
-      <Link to="/routines" className="text-sm text-neutral-400 underline">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-8 pb-24 text-fg">
+      <Link to="/routines" className="text-sm text-fg-muted underline">
         ← Volver a rutinas
       </Link>
 
-      {isLoading && <p className="text-neutral-400">Cargando...</p>}
+      {isLoading && <p className="text-fg-muted">Cargando...</p>}
       {error && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           No se pudo cargar la rutina.
         </p>
       )}
@@ -321,7 +321,7 @@ export function RoutineDetailPage() {
                 autoFocus
               />
               {nameError && (
-                <p role="alert" className="text-sm text-red-400">
+                <p role="alert" className="text-sm text-danger">
                   {nameError}
                 </p>
               )}
@@ -346,7 +346,7 @@ export function RoutineDetailPage() {
                 <button
                   type="button"
                   onClick={() => startEditingName(routine.name)}
-                  className="text-sm text-neutral-400 underline"
+                  className="text-sm text-fg-muted underline"
                 >
                   Editar
                 </button>
@@ -367,12 +367,12 @@ export function RoutineDetailPage() {
                 setMuscleGroupsError(null);
                 updateMuscleGroups.mutate();
               }}
-              className="flex flex-col gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3"
+              className="flex flex-col gap-2 rounded-2xl border border-border bg-surface px-4 py-3"
             >
               <p className="text-sm font-medium">Grupos musculares</p>
               <div className="flex flex-wrap gap-2">
                 {availableMuscleGroups?.map((group) => (
-                  <label key={group} className="flex items-center gap-1 text-sm text-neutral-300">
+                  <label key={group} className="flex items-center gap-1 text-sm text-fg">
                     <input
                       type="checkbox"
                       checked={editMuscleGroups.includes(group)}
@@ -383,7 +383,7 @@ export function RoutineDetailPage() {
                 ))}
               </div>
               {muscleGroupsError && (
-                <p role="alert" className="text-sm text-red-400">
+                <p role="alert" className="text-sm text-danger">
                   {muscleGroupsError}
                 </p>
               )}
@@ -402,7 +402,7 @@ export function RoutineDetailPage() {
               </div>
             </form>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-neutral-400">
+            <div className="flex items-center gap-2 text-sm text-fg-muted">
               <span>
                 {routine.muscleGroups.length > 0
                   ? routine.muscleGroups.join(", ")
@@ -419,7 +419,7 @@ export function RoutineDetailPage() {
           )}
 
           {routine.exercises.length === 0 ? (
-            <p className="text-neutral-400">
+            <p className="text-fg-muted">
               Esta rutina todavía no tiene ejercicios. Agregá al menos uno para poder iniciar una sesión.
             </p>
           ) : (
@@ -427,14 +427,14 @@ export function RoutineDetailPage() {
               {groupByOrder(routine.exercises).map((group) => (
                 <li
                   key={group[0]!.id}
-                  className="rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3"
+                  className="rounded-2xl border border-border bg-surface px-4 py-3"
                 >
                   <ul className="flex flex-col gap-2">
                     {group.map((routineExercise) =>
                       editingId === routineExercise.id ? (
                         <li
                           key={routineExercise.id}
-                          className="flex flex-col gap-2 rounded-md border border-neutral-800 bg-neutral-950 px-3 py-3"
+                          className="flex flex-col gap-2 rounded-2xl border border-border bg-surface-muted px-3 py-3"
                         >
                           <form
                             className="flex flex-col gap-2"
@@ -491,7 +491,7 @@ export function RoutineDetailPage() {
                               Usar sugerencia
                             </Button>
                             {editError && (
-                              <p role="alert" className="text-sm text-red-400">
+                              <p role="alert" className="text-sm text-danger">
                                 {editError}
                               </p>
                             )}
@@ -526,7 +526,7 @@ export function RoutineDetailPage() {
                                 : ""}
                               {routineExercise.exercise.name}
                             </span>
-                            <span className="block text-sm text-neutral-400">
+                            <span className="block text-sm text-fg-muted">
                               {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
                               {routineExercise.targetRepMax} reps ·{" "}
                               {GOAL_LABELS[routineExercise.goal]}
@@ -560,7 +560,7 @@ export function RoutineDetailPage() {
           {showAddForm ? (
             <form
               onSubmit={handleAddSubmit}
-              className="flex flex-col gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3"
+              className="flex flex-col gap-3 rounded-2xl border border-border bg-surface px-4 py-3"
             >
               <FieldLabel>
                 Ejercicio
@@ -574,7 +574,7 @@ export function RoutineDetailPage() {
                 </Select>
               </FieldLabel>
               {routine.muscleGroups.length > 0 && (
-                <label className="flex items-center gap-1 text-sm text-neutral-400">
+                <label className="flex items-center gap-1 text-sm text-fg-muted">
                   <input
                     type="checkbox"
                     checked={viewAllExercises}
@@ -651,7 +651,7 @@ export function RoutineDetailPage() {
                 Usar sugerencia
               </Button>
               {addError && (
-                <p role="alert" className="text-sm text-red-400">
+                <p role="alert" className="text-sm text-danger">
                   {addError}
                 </p>
               )}

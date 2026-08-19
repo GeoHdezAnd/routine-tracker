@@ -153,22 +153,22 @@ export function SessionDetailPage() {
   const isFinished = session?.finishedAt !== null && session?.finishedAt !== undefined;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-neutral-950 px-4 py-8 text-neutral-100">
-      <Link to="/sessions" className="text-sm text-neutral-400 underline">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-8 pb-24 text-fg">
+      <Link to="/sessions" className="text-sm text-fg-muted underline">
         ← Volver a sesiones
       </Link>
 
-      {isLoading && <p className="text-neutral-400">Cargando...</p>}
+      {isLoading && <p className="text-fg-muted">Cargando...</p>}
 
       {session && (
         <>
           <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-xl font-semibold">Sesión</h1>
-              <p className="text-sm text-neutral-400">{new Date(session.startedAt).toLocaleString()}</p>
+              <p className="text-sm text-fg-muted">{new Date(session.startedAt).toLocaleString()}</p>
             </div>
             {isFinished ? (
-              <span className="text-sm text-neutral-500">Finalizada</span>
+              <span className="text-sm text-fg-subtle">Finalizada</span>
             ) : (
               <Button variant="secondary" onClick={() => finishSession.mutate()} disabled={finishSession.isPending}>
                 Finalizar sesión
@@ -176,7 +176,7 @@ export function SessionDetailPage() {
             )}
           </div>
 
-          {session.setLogs.length === 0 && <p className="text-neutral-400">Todavía no registraste ninguna serie.</p>}
+          {session.setLogs.length === 0 && <p className="text-fg-muted">Todavía no registraste ninguna serie.</p>}
 
           <ul className="flex flex-col gap-3">
             {[...groupByExercise(session.setLogs).entries()].map(([exId, logs]) => (
@@ -230,7 +230,7 @@ export function SessionDetailPage() {
                             </FieldLabel>
                           </div>
                           {editError && (
-                            <p role="alert" className="text-sm text-red-400">
+                            <p role="alert" className="text-sm text-danger">
                               {editError}
                             </p>
                           )}
@@ -283,7 +283,7 @@ export function SessionDetailPage() {
           </ul>
 
           {!isFinished && (
-            <form onSubmit={handleAddLog} className="flex flex-col gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3">
+            <form onSubmit={handleAddLog} className="flex flex-col gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
               <FieldLabel>
                 Ejercicio
                 <Select value={exerciseId} onChange={(event) => setExerciseId(event.target.value)}>
@@ -321,7 +321,7 @@ export function SessionDetailPage() {
                 </FieldLabel>
               </div>
               {logError && (
-                <p role="alert" className="text-sm text-red-400">
+                <p role="alert" className="text-sm text-danger">
                   {logError}
                 </p>
               )}
