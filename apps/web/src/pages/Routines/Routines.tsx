@@ -12,7 +12,7 @@ type Routine = {
 };
 
 export function RoutinesPage() {
-  const { token, user, logout } = useAuth();
+  const { token, user } = useAuth();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,14 +44,9 @@ export function RoutinesPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-neutral-950 px-4 py-8 text-neutral-100">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">Tus rutinas</h1>
-          {user && <p className="text-sm text-neutral-400">{user.name ?? user.email}</p>}
-        </div>
-        <button type="button" onClick={logout} className="text-sm text-neutral-400 underline">
-          Cerrar sesión
-        </button>
+      <header>
+        <h1 className="text-xl font-semibold">Tus rutinas</h1>
+        {user && <p className="text-sm text-neutral-400">{user.name ?? user.email}</p>}
       </header>
 
       <form onSubmit={handleSubmit} className="flex gap-2">

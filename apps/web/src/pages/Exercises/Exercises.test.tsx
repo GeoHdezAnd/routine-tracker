@@ -65,7 +65,7 @@ describe("ExercisesPage", () => {
 
     expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
     expect(screen.getByText("Press banca")).toBeInTheDocument();
-    expect(screen.getByText("Pierna · Barra · Compuesto")).toBeInTheDocument();
+    expect(screen.getAllByText("Barra · Compuesto")).toHaveLength(2);
   });
 
   it("filtra la lista por grupo muscular", async () => {
@@ -75,8 +75,7 @@ describe("ExercisesPage", () => {
 
     expect(await screen.findByText("Press banca")).toBeInTheDocument();
 
-    const [filterInput] = screen.getAllByPlaceholderText("Grupo muscular");
-    fireEvent.change(filterInput, { target: { value: "Pierna" } });
+    fireEvent.click(screen.getByText("Pierna"));
 
     expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
     expect(screen.queryByText("Press banca")).not.toBeInTheDocument();

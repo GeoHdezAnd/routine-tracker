@@ -1,1 +1,91 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-canvas: #f2f2f7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #efeff4;
+  --color-fg: #0b0b0f;
+  --color-fg-muted: #6b7280;
+  --color-fg-subtle: #9ca3af;
+  --color-border: #e5e5ea;
+  --color-accent: #3478f6;
+  --color-accent-fg: #ffffff;
+  --color-danger: #ef4444;
+  --color-danger-soft: #fef2f2;
+  --color-pr: #ff9500;
+
+  --color-group-1: #ff8a5c;
+  --color-group-1-soft: #fff0e8;
+  --color-group-2: #2dd4bf;
+  --color-group-2-soft: #e6fbf8;
+  --color-group-3: #a78bfa;
+  --color-group-3-soft: #f2edfe;
+  --color-group-4: #fb7185;
+  --color-group-4-soft: #fef1f2;
+  --color-group-5: #38bdf8;
+  --color-group-5-soft: #e8f7fe;
+  --color-group-6: #facc15;
+  --color-group-6-soft: #fffceb;
+}
+
+.dark {
+  --color-canvas: #0a0a0a;
+  --color-surface: #171717;
+  --color-surface-muted: #262626;
+  --color-fg: #f5f5f5;
+  --color-fg-muted: #a3a3a3;
+  --color-fg-subtle: #737373;
+  --color-border: #262626;
+  --color-accent: #5b9bff;
+  --color-accent-fg: #0a0a0a;
+  --color-danger: #f87171;
+  --color-danger-soft: rgba(248, 113, 113, 0.1);
+  --color-pr: #ffb340;
+
+  --color-group-1: #ff8a5c;
+  --color-group-1-soft: rgba(255, 138, 92, 0.14);
+  --color-group-2: #2dd4bf;
+  --color-group-2-soft: rgba(45, 212, 191, 0.14);
+  --color-group-3: #a78bfa;
+  --color-group-3-soft: rgba(167, 139, 250, 0.14);
+  --color-group-4: #fb7185;
+  --color-group-4-soft: rgba(251, 113, 133, 0.14);
+  --color-group-5: #38bdf8;
+  --color-group-5-soft: rgba(56, 189, 248, 0.14);
+  --color-group-6: #facc15;
+  --color-group-6-soft: rgba(250, 204, 21, 0.14);
+}
+
+@theme inline {
+  --color-canvas: var(--color-canvas);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-fg: var(--color-fg);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-subtle: var(--color-fg-subtle);
+  --color-border: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-accent-fg: var(--color-accent-fg);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-pr: var(--color-pr);
+
+  --color-group-1: var(--color-group-1);
+  --color-group-1-soft: var(--color-group-1-soft);
+  --color-group-2: var(--color-group-2);
+  --color-group-2-soft: var(--color-group-2-soft);
+  --color-group-3: var(--color-group-3);
+  --color-group-3-soft: var(--color-group-3-soft);
+  --color-group-4: var(--color-group-4);
+  --color-group-4-soft: var(--color-group-4-soft);
+  --color-group-5: var(--color-group-5);
+  --color-group-5-soft: var(--color-group-5-soft);
+  --color-group-6: var(--color-group-6);
+  --color-group-6-soft: var(--color-group-6-soft);
+}
+
+body {
+  background-color: var(--color-canvas);
+  color-scheme: light dark;
+}

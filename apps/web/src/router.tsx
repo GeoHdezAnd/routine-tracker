@@ -10,6 +10,7 @@ import { SessionsPage } from "./pages/Sessions/Sessions";
 import { SessionDetailPage } from "./pages/SessionDetail/SessionDetail";
 import { DashboardPage } from "./pages/Dashboard/Dashboard";
 import { ExerciseProgressPage } from "./pages/ExerciseProgress/ExerciseProgress";
+import { SettingsPage } from "./pages/Settings/Settings";
 
 export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage /> },
@@ -24,6 +25,7 @@ export const routes: RouteObject[] = [
       { path: "/exercises/:id/progress", element: <ExerciseProgressPage /> },
       { path: "/sessions", element: <SessionsPage /> },
       { path: "/sessions/:id", element: <SessionDetailPage /> },
+      { path: "/settings", element: <SettingsPage /> },
     ],
   },
 ];
