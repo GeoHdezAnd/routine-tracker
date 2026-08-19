@@ -94,7 +94,7 @@
       }
     },
     {
-      "name": "Curl cuadriceps",
+      "name": "Extension de cuadriceps",
       "muscleGroup": "Piernas",
       "equipmentType": "Máquina",
       "movementType": "ISOLATION",
@@ -198,7 +198,7 @@
       }
     },
     {
-      "name": "Subida a peldaño",
+      "name": "Step-ups",
       "muscleGroup": "Piernas",
       "equipmentType": "Banco",
       "movementType": "COMPOUND",
