@@ -1,9 +1,12 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronRight, Dumbbell, Plus, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
+import { colorForLabel } from "../../lib/colors";
+import { Button, Card, IconButton, Input } from "../../components/ui";
 
 type Routine = {
   id: string;
@@ -11,11 +14,15 @@ type Routine = {
   createdAt: string;
 };
 
+type Session = { id: string };
+
 export function RoutinesPage() {
   const { token, user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const { data: routines, isLoading } = useQuery({
     queryKey: ["routines", token],
@@ -27,11 +34,17 @@ export function RoutinesPage() {
       apiFetch<Routine>("/routines", { method: "POST", token, body: { name: routineName } }),
     onSuccess: () => {
       setName("");
+      setShowCreateForm(false);
       void queryClient.invalidateQueries({ queryKey: ["routines", token] });
     },
     onError: (mutationError: unknown) => {
       setError(mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado");
     },
+  });
+
+  const startSession = useMutation({
+    mutationFn: (routineId: string) => apiFetch<Session>("/sessions", { method: "POST", token, body: { routineId } }),
+    onSuccess: (session) => navigate(`/sessions/${session.id}`),
   });
 
   function handleSubmit(event: FormEvent) {
@@ -43,52 +56,79 @@ export function RoutinesPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-neutral-950 px-4 py-8 text-neutral-100">
-      <header>
-        <h1 className="text-xl font-semibold">Tus rutinas</h1>
-        {user && <p className="text-sm text-neutral-400">{user.name ?? user.email}</p>}
-      </header>
-
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Nombre de la rutina"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-base text-neutral-100"
-        />
-        <button
-          type="submit"
-          disabled={createRoutine.isPending}
-          className="rounded-md bg-neutral-100 px-4 py-2 font-medium text-neutral-950 disabled:opacity-50"
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-8 pb-24 text-fg">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Rutinas</h1>
+          {user && <p className="text-sm text-fg-muted">{user.name ?? user.email}</p>}
+        </div>
+        <IconButton
+          aria-label={showCreateForm ? "Cerrar formulario" : "Nueva rutina"}
+          onClick={() => setShowCreateForm((current) => !current)}
         >
-          Crear
-        </button>
-      </form>
-      {error && (
-        <p role="alert" className="text-sm text-red-400">
-          {error}
-        </p>
+          {showCreateForm ? <X className="size-6" /> : <Plus className="size-6" />}
+        </IconButton>
+      </div>
+
+      {showCreateForm && (
+        <Card>
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <Input
+              placeholder="Nombre de la rutina"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              autoFocus
+              className="flex-1"
+            />
+            <Button type="submit" disabled={createRoutine.isPending} className="shrink-0">
+              Crear
+            </Button>
+          </form>
+          {error && (
+            <p role="alert" className="mt-2 text-sm text-danger">
+              {error}
+            </p>
+          )}
+        </Card>
       )}
 
-      {isLoading && <p className="text-neutral-400">Cargando...</p>}
+      {isLoading && <p className="text-fg-muted">Cargando...</p>}
 
       {!isLoading && routines && routines.length === 0 && (
-        <p className="text-neutral-400">Todavía no tenés rutinas, creá la primera.</p>
+        <p className="text-fg-muted">Todavía no tenés rutinas, creá la primera.</p>
       )}
 
-      <ul className="flex flex-col gap-2">
-        {routines?.map((routine) => (
-          <li key={routine.id}>
-            <Link
-              to={`/routines/${routine.id}`}
-              className="block rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3 hover:border-neutral-700"
-            >
-              {routine.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {routines && routines.length > 0 && (
+        <Card className="divide-y divide-border overflow-hidden p-0">
+          {routines.map((routine) => {
+            const color = colorForLabel(routine.name);
+            return (
+              <div key={routine.id} className="flex items-center gap-3 px-4 py-3">
+                <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
+                  <Dumbbell className={`size-5 ${color.fg}`} />
+                </span>
+                <Link to={`/routines/${routine.id}`} className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{routine.name}</p>
+                  <p className="truncate text-sm text-fg-muted">
+                    Creada el {new Date(routine.createdAt).toLocaleDateString()}
+                  </p>
+                </Link>
+                <button
+                  type="button"
+                  disabled={startSession.isPending}
+                  onClick={() => startSession.mutate(routine.id)}
+                  className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 ${color.soft} ${color.fg}`}
+                >
+                  Iniciar
+                </button>
+                <Link to={`/routines/${routine.id}`} className="shrink-0 text-fg-subtle">
+                  <ChevronRight className="size-4" />
+                </Link>
+              </div>
+            );
+          })}
+        </Card>
+      )}
     </main>
   );
 }

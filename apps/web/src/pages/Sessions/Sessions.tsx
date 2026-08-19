@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CalendarClock, Trash2 } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch } from "../../lib/api";
-import { Button, Card } from "../../components/ui";
+import { Button, Card, IconButton } from "../../components/ui";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 
 type Session = {
@@ -43,40 +44,50 @@ export function SessionsPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-neutral-950 px-4 py-8 text-neutral-100">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-8 pb-24 text-fg">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Sesiones</h1>
+        <h1 className="text-3xl font-bold">Sesiones</h1>
         <Button onClick={() => createSession.mutate()} disabled={createSession.isPending}>
           Nueva sesión libre
         </Button>
       </div>
 
-      {isLoading && <p className="text-neutral-400">Cargando...</p>}
+      {isLoading && <p className="text-fg-muted">Cargando...</p>}
 
-      {sessions?.length === 0 && <p className="text-neutral-400">Todavía no registraste ninguna sesión.</p>}
+      {sessions?.length === 0 && <p className="text-fg-muted">Todavía no registraste ninguna sesión.</p>}
 
-      <ul className="flex flex-col gap-2">
-        {sessions?.map((session) => (
-          <li key={session.id}>
-            <Card className="flex items-center justify-between gap-2">
-              <Link to={`/sessions/${session.id}`} className="flex flex-1 items-center justify-between gap-2">
-                <span>{new Date(session.startedAt).toLocaleString()}</span>
-                <span className={session.finishedAt ? "text-sm text-neutral-500" : "text-sm text-green-400"}>
-                  {session.finishedAt ? "Finalizada" : "En curso"}
-                </span>
+      {sessions && sessions.length > 0 && (
+        <Card className="divide-y divide-border overflow-hidden p-0">
+          {sessions.map((session) => (
+            <div key={session.id} className="flex items-center gap-3 px-4 py-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-group-5-soft">
+                <CalendarClock className="size-5 text-group-5" />
+              </span>
+              <Link to={`/sessions/${session.id}`} className="min-w-0 flex-1">
+                <p className="truncate font-semibold">
+                  {new Date(session.startedAt).toLocaleDateString()}{" "}
+                  {new Date(session.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+                <p className="text-sm text-fg-muted">{session.routineId ? "Rutina asociada" : "Sesión libre"}</p>
               </Link>
-              <Button
-                type="button"
-                variant="danger"
-                className="shrink-0 px-2 py-1 text-xs"
+              <span
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                  session.finishedAt ? "bg-surface-muted text-fg-muted" : "bg-group-2-soft text-group-2"
+                }`}
+              >
+                {session.finishedAt ? "Finalizada" : "En curso"}
+              </span>
+              <IconButton
+                aria-label="Borrar sesión"
+                className="size-8 text-danger hover:bg-danger-soft"
                 onClick={() => setSessionToDelete(session.id)}
               >
-                Borrar
-              </Button>
-            </Card>
-          </li>
-        ))}
-      </ul>
+                <Trash2 className="size-4" />
+              </IconButton>
+            </div>
+          ))}
+        </Card>
+      )}
 
       <ConfirmDialog
         open={sessionToDelete !== null}

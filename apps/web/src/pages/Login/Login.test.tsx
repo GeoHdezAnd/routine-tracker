@@ -45,7 +45,7 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "supersecret123" } });
     fireEvent.click(screen.getByRole("button", { name: "Ingresar" }));
 
-    expect(await screen.findByText("Tus rutinas")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Rutinas" })).toBeInTheDocument();
     expect(localStorage.getItem("routine-tracker:token")).toBe("fake-token");
   });
 

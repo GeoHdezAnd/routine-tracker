@@ -100,7 +100,7 @@ describe("SessionsPage", () => {
 
     await screen.findByText("En curso");
 
-    fireEvent.click(screen.getByRole("button", { name: "Borrar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Borrar sesión" }));
 
     expect(screen.getByText("Borrar sesión")).toBeInTheDocument();
 

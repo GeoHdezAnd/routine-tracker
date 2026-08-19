@@ -6,6 +6,7 @@ import type { MovementType } from "@routine-tracker/shared";
 import { ChevronRight, Dumbbell, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
+import { colorForLabel } from "../../lib/colors";
 import { Button, Card, FieldLabel, IconButton, Input, Pill, Select } from "../../components/ui";
 
 type Exercise = {
@@ -29,20 +30,6 @@ const MOVEMENT_LABELS: Record<MovementType, string> = {
   ISOLATION: "Aislamiento",
 };
 
-const GROUP_COLORS = [
-  { dot: "bg-group-1", soft: "bg-group-1-soft", fg: "text-group-1" },
-  { dot: "bg-group-2", soft: "bg-group-2-soft", fg: "text-group-2" },
-  { dot: "bg-group-3", soft: "bg-group-3-soft", fg: "text-group-3" },
-  { dot: "bg-group-4", soft: "bg-group-4-soft", fg: "text-group-4" },
-  { dot: "bg-group-5", soft: "bg-group-5-soft", fg: "text-group-5" },
-  { dot: "bg-group-6", soft: "bg-group-6-soft", fg: "text-group-6" },
-];
-
-function colorForGroup(muscleGroup: string) {
-  let hash = 0;
-  for (let i = 0; i < muscleGroup.length; i++) hash = (hash * 31 + muscleGroup.charCodeAt(i)) >>> 0;
-  return GROUP_COLORS[hash % GROUP_COLORS.length];
-}
 
 export function ExercisesPage() {
   const { token, user } = useAuth();
@@ -236,7 +223,7 @@ export function ExercisesPage() {
 
       <div className="flex flex-col gap-3">
         {grouped.map(([group, exercises]) => {
-          const color = colorForGroup(group);
+          const color = colorForLabel(group);
           return (
             <section key={group} className="flex flex-col gap-2">
               <div className="flex items-center gap-2 px-1">
