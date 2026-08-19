@@ -51,15 +51,39 @@ async function main() {
 
     // Global catalog exercises are identified by ownerId: null. There is no
     // externalId to upsert against (deliberately not added to the schema —
-    // this is a one-off seed, not a live sync), so the simplest idempotent
-    // strategy is: wipe every global exercise and reinsert the curated set
-    // fresh on each run. This never touches rows with a non-null ownerId
-    // (real users' custom exercises).
-    const deleted = await prisma.exercise.deleteMany({ where: { ownerId: null } });
+    // this is a one-off seed, not a live sync), so the idempotent strategy
+    // is: wipe every global exercise and reinsert the curated set fresh on
+    // each run. This never touches rows with a non-null ownerId (real
+    // users' custom exercises).
+    //
+    // Exception: SetLog.exercise is onDelete: Restrict (a workout set must
+    // keep pointing at a real exercise, even a retired one), so a global
+    // exercise with logged history can't be deleted. Those rows are kept
+    // as-is instead of being recreated, and skipped from reinsertion so we
+    // don't end up with duplicate names.
+    const referencedExerciseIds = await prisma.setLog.findMany({
+      where: { exercise: { ownerId: null } },
+      select: { exerciseId: true },
+      distinct: ["exerciseId"],
+    });
+    const keptExercises = await prisma.exercise.findMany({
+      where: { id: { in: referencedExerciseIds.map((row) => row.exerciseId) } },
+      select: { name: true },
+    });
+    const keptNames = new Set(keptExercises.map((exercise) => exercise.name));
+
+    const deleted = await prisma.exercise.deleteMany({
+      where: { ownerId: null, id: { notIn: referencedExerciseIds.map((row) => row.exerciseId) } },
+    });
     console.log(`Deleted ${deleted.count} existing global exercise(s).`);
+    if (keptNames.size > 0) {
+      console.log(`Kept ${keptNames.size} global exercise(s) with logged workout history.`);
+    }
 
     const created = await prisma.exercise.createMany({
-      data: exercises.map((exercise) => ({ ...exercise, ownerId: null })),
+      data: exercises
+        .filter((exercise) => !keptNames.has(exercise.name))
+        .map((exercise) => ({ ...exercise, ownerId: null })),
     });
     console.log(`Inserted ${created.count} global exercise(s) from ${SEED_DATA_PATH}.`);
   } finally {
