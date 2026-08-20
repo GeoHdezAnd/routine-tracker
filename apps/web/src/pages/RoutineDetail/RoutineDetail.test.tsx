@@ -116,9 +116,7 @@ describe("RoutineDetailPage", () => {
 
     await screen.findByText("Press banca");
 
-    const editButtons = screen.getAllByRole("button", { name: "Editar" });
-    // orden en el DOM: editar nombre, editar grupos musculares, editar ejercicio
-    fireEvent.click(editButtons[2]!);
+    fireEvent.click(screen.getByRole("button", { name: "Editar ejercicio" }));
 
     const useSuggestionButton = await screen.findByRole("button", { name: "Usar sugerencia" });
     fireEvent.click(useSuggestionButton);

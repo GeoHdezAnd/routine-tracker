@@ -25,7 +25,13 @@ const routineSchema = z.object({
   name: z.string().min(1),
   muscleGroups: z.array(z.string().min(1)).optional(),
 });
-const updateRoutineSchema = routineSchema.partial();
+const updateRoutineSchema = routineSchema.partial().extend({
+  archived: z.boolean().optional(),
+});
+
+const listRoutinesQuerySchema = z.object({
+  archived: z.enum(["true", "false"]).optional(),
+});
 
 const addRoutineExerciseSchema = z.object({
   exerciseId: z.string().min(1),
@@ -74,8 +80,14 @@ routinesRouter.post("/", async (req, res) => {
   res.status(201).json(routine);
 });
 
-routinesRouter.get("/", async (_req, res) => {
-  const routines = await listRoutinesForUser(res.locals.userId);
+routinesRouter.get("/", async (req, res) => {
+  const parsed = listRoutinesQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+
+  const routines = await listRoutinesForUser(res.locals.userId, parsed.data.archived === "true");
   res.status(200).json(routines);
 });
 

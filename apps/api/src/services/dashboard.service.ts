@@ -12,7 +12,7 @@ export async function getDashboard(userId: string) {
       include: { routine: { select: { name: true } } },
     }),
     prisma.routine.findMany({
-      where: { userId },
+      where: { userId, archived: false },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

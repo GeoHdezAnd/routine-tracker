@@ -3,9 +3,11 @@ import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MovementType, TrainingGoal } from "@routine-tracker/shared";
+import { Dumbbell, Pencil, Plus, Trash2, Wand2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
-import { Button, FieldLabel, Input, Select } from "../../components/ui";
+import { colorForLabel } from "../../lib/colors";
+import { Button, Card, FieldLabel, IconButton, Input, Pill, Select } from "../../components/ui";
 
 type Exercise = {
   id: string;
@@ -341,66 +343,76 @@ export function RoutineDetailPage() {
             </form>
           ) : (
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold">{routine.name}</h1>
-                <button
-                  type="button"
+              <div className="flex min-w-0 items-center gap-1">
+                <h1 className="truncate text-2xl font-bold">{routine.name}</h1>
+                <IconButton
+                  aria-label="Editar nombre"
+                  className="size-8 shrink-0"
                   onClick={() => startEditingName(routine.name)}
-                  className="text-sm text-fg-muted underline"
                 >
-                  Editar
-                </button>
+                  <Pencil className="size-4" />
+                </IconButton>
               </div>
-              <Button
-                onClick={() => startSession.mutate()}
-                disabled={startSession.isPending || routine.exercises.length === 0}
-              >
-                Iniciar sesión
-              </Button>
+              <div className="flex shrink-0 items-center gap-2">
+                <IconButton
+                  aria-label={showAddForm ? "Cerrar formulario" : "Agregar ejercicio"}
+                  onClick={() => setShowAddForm((current) => !current)}
+                >
+                  {showAddForm ? <X className="size-6" /> : <Plus className="size-6" />}
+                </IconButton>
+                <Button
+                  onClick={() => startSession.mutate()}
+                  disabled={startSession.isPending || routine.exercises.length === 0}
+                >
+                  Iniciar sesión
+                </Button>
+              </div>
             </div>
           )}
 
           {isEditingMuscleGroups ? (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                setMuscleGroupsError(null);
-                updateMuscleGroups.mutate();
-              }}
-              className="flex flex-col gap-2 rounded-2xl border border-border bg-surface px-4 py-3"
-            >
-              <p className="text-sm font-medium">Grupos musculares</p>
-              <div className="flex flex-wrap gap-2">
-                {availableMuscleGroups?.map((group) => (
-                  <label key={group} className="flex items-center gap-1 text-sm text-fg">
-                    <input
-                      type="checkbox"
-                      checked={editMuscleGroups.includes(group)}
-                      onChange={() => toggleMuscleGroup(group)}
-                    />
-                    {group}
-                  </label>
-                ))}
-              </div>
-              {muscleGroupsError && (
-                <p role="alert" className="text-sm text-danger">
-                  {muscleGroupsError}
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Button type="submit" className="px-3 py-1 text-sm" disabled={updateMuscleGroups.isPending}>
-                  Guardar
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="px-3 py-1 text-sm"
-                  onClick={() => setIsEditingMuscleGroups(false)}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+            <Card>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setMuscleGroupsError(null);
+                  updateMuscleGroups.mutate();
+                }}
+                className="flex flex-col gap-3"
+              >
+                <p className="text-sm font-semibold">Grupos musculares</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableMuscleGroups?.map((group) => (
+                    <Pill
+                      key={group}
+                      type="button"
+                      active={editMuscleGroups.includes(group)}
+                      onClick={() => toggleMuscleGroup(group)}
+                    >
+                      {group}
+                    </Pill>
+                  ))}
+                </div>
+                {muscleGroupsError && (
+                  <p role="alert" className="text-sm text-danger">
+                    {muscleGroupsError}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Button type="submit" className="px-3 py-1 text-sm" disabled={updateMuscleGroups.isPending}>
+                    Guardar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="px-3 py-1 text-sm"
+                    onClick={() => setIsEditingMuscleGroups(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            </Card>
           ) : (
             <div className="flex items-center gap-2 text-sm text-fg-muted">
               <span>
@@ -411,11 +423,119 @@ export function RoutineDetailPage() {
               <button
                 type="button"
                 onClick={() => startEditingMuscleGroups(routine.muscleGroups)}
-                className="underline"
+                className="font-medium text-accent underline"
               >
                 Editar
               </button>
             </div>
+          )}
+
+          {showAddForm && (
+            <Card>
+              <form onSubmit={handleAddSubmit} className="flex flex-col gap-3">
+                <p className="text-sm font-semibold">Agregar ejercicio</p>
+                <FieldLabel>
+                  Ejercicio
+                  <Select value={exerciseId} onChange={(event) => setExerciseId(event.target.value)}>
+                    <option value="">Elegí un ejercicio</option>
+                    {exercisesData?.data.map((exercise) => (
+                      <option key={exercise.id} value={exercise.id}>
+                        {exercise.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FieldLabel>
+                {routine.muscleGroups.length > 0 && (
+                  <label className="flex items-center gap-1 text-sm text-fg-muted">
+                    <input
+                      type="checkbox"
+                      checked={viewAllExercises}
+                      onChange={(event) => setViewAllExercises(event.target.checked)}
+                    />
+                    Ver todos los ejercicios (no solo {routine.muscleGroups.join(", ")})
+                  </label>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <FieldLabel>
+                    Orden
+                    <Input
+                      type="number"
+                      min={1}
+                      value={order}
+                      onChange={(event) => setOrder(Number(event.target.value))}
+                    />
+                  </FieldLabel>
+                  <FieldLabel>
+                    Superserie (opcional)
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="1, 2..."
+                      value={supersetSlot}
+                      onChange={(event) => setSupersetSlot(event.target.value)}
+                    />
+                  </FieldLabel>
+                </div>
+                <FieldLabel>
+                  Objetivo
+                  <Select value={goal} onChange={(event) => setGoal(event.target.value as TrainingGoal)}>
+                    <option value="STRENGTH">Fuerza</option>
+                    <option value="HYPERTROPHY">Hipertrofia</option>
+                    <option value="ENDURANCE">Resistencia</option>
+                  </Select>
+                </FieldLabel>
+                <FieldLabel>
+                  Series
+                  <Input
+                    type="number"
+                    min={1}
+                    value={targetSets}
+                    onChange={(event) => setTargetSets(Number(event.target.value))}
+                  />
+                </FieldLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  <FieldLabel>
+                    Reps min
+                    <Input
+                      type="number"
+                      value={targetRepMin}
+                      onChange={(event) => setTargetRepMin(event.target.value)}
+                    />
+                  </FieldLabel>
+                  <FieldLabel>
+                    Reps max
+                    <Input
+                      type="number"
+                      value={targetRepMax}
+                      onChange={(event) => setTargetRepMax(event.target.value)}
+                    />
+                  </FieldLabel>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => repRangeSuggestion.mutate()}
+                  disabled={!selectedExercise || repRangeSuggestion.isPending}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Wand2 className="size-4" />
+                  Usar sugerencia
+                </Button>
+                {addError && (
+                  <p role="alert" className="text-sm text-danger">
+                    {addError}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={addExercise.isPending}>
+                    Agregar
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setShowAddForm(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            </Card>
           )}
 
           {routine.exercises.length === 0 ? (
@@ -427,14 +547,15 @@ export function RoutineDetailPage() {
               {groupByOrder(routine.exercises).map((group) => (
                 <li
                   key={group[0]!.id}
-                  className="rounded-2xl border border-border bg-surface px-4 py-3"
+                  className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm"
                 >
-                  <ul className="flex flex-col gap-2">
-                    {group.map((routineExercise) =>
-                      editingId === routineExercise.id ? (
+                  <ul className="flex flex-col gap-3">
+                    {group.map((routineExercise) => {
+                      const color = colorForLabel(routineExercise.exercise.name);
+                      return editingId === routineExercise.id ? (
                         <li
                           key={routineExercise.id}
-                          className="flex flex-col gap-2 rounded-2xl border border-border bg-surface-muted px-3 py-3"
+                          className="flex flex-col gap-2 rounded-xl border border-border bg-surface-muted px-3 py-3"
                         >
                           <form
                             className="flex flex-col gap-2"
@@ -443,6 +564,9 @@ export function RoutineDetailPage() {
                               updateExercise.mutate(routineExercise.id);
                             }}
                           >
+                            <p className="truncate text-sm font-semibold">
+                              Editando: {routineExercise.exercise.name}
+                            </p>
                             <FieldLabel>
                               Objetivo
                               <Select
@@ -484,10 +608,11 @@ export function RoutineDetailPage() {
                             <Button
                               type="button"
                               variant="secondary"
-                              className="px-3 py-1 text-sm"
+                              className="flex items-center justify-center gap-2"
                               onClick={() => editRepRangeSuggestion.mutate(routineExercise.exercise.movementType)}
                               disabled={editRepRangeSuggestion.isPending}
                             >
+                              <Wand2 className="size-4" />
                               Usar sugerencia
                             </Button>
                             {editError && (
@@ -515,159 +640,49 @@ export function RoutineDetailPage() {
                           </form>
                         </li>
                       ) : (
-                        <li
-                          key={routineExercise.id}
-                          className="flex items-start justify-between gap-2"
-                        >
-                          <span>
-                            <span className="font-medium">
-                              {routineExercise.supersetSlot !== null
-                                ? `A${routineExercise.supersetSlot} `
-                                : ""}
-                              {routineExercise.exercise.name}
-                            </span>
-                            <span className="block text-sm text-fg-muted">
-                              {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
-                              {routineExercise.targetRepMax} reps ·{" "}
-                              {GOAL_LABELS[routineExercise.goal]}
-                            </span>
+                        <li key={routineExercise.id} className="flex items-center gap-3">
+                          <span
+                            className={`flex size-10 shrink-0 items-center justify-center rounded-full ${color.soft}`}
+                          >
+                            <Dumbbell className={`size-5 ${color.fg}`} />
                           </span>
-                          <div className="flex shrink-0 gap-2">
-                            <Button
-                              variant="secondary"
-                              className="px-2 py-1 text-xs"
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-semibold">
+                              {routineExercise.supersetSlot !== null && (
+                                <span className="mr-1.5 rounded-full bg-accent/15 px-1.5 py-0.5 text-xs font-bold text-accent">
+                                  A{routineExercise.supersetSlot}
+                                </span>
+                              )}
+                              {routineExercise.exercise.name}
+                            </p>
+                            <p className="truncate text-sm text-fg-muted">
+                              {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
+                              {routineExercise.targetRepMax} reps · {GOAL_LABELS[routineExercise.goal]}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 gap-1">
+                            <IconButton
+                              aria-label="Editar ejercicio"
+                              className="size-8"
                               onClick={() => startEditing(routineExercise)}
                             >
-                              Editar
-                            </Button>
-                            <Button
-                              variant="danger"
-                              className="px-2 py-1 text-xs"
+                              <Pencil className="size-4" />
+                            </IconButton>
+                            <IconButton
+                              aria-label="Quitar ejercicio"
+                              className="size-8 text-danger hover:bg-danger-soft"
                               onClick={() => removeExercise.mutate(routineExercise.id)}
                             >
-                              Quitar
-                            </Button>
+                              <Trash2 className="size-4" />
+                            </IconButton>
                           </div>
                         </li>
-                      ),
-                    )}
+                      );
+                    })}
                   </ul>
                 </li>
               ))}
             </ul>
-          )}
-
-          {showAddForm ? (
-            <form
-              onSubmit={handleAddSubmit}
-              className="flex flex-col gap-3 rounded-2xl border border-border bg-surface px-4 py-3"
-            >
-              <FieldLabel>
-                Ejercicio
-                <Select value={exerciseId} onChange={(event) => setExerciseId(event.target.value)}>
-                  <option value="">Elegí un ejercicio</option>
-                  {exercisesData?.data.map((exercise) => (
-                    <option key={exercise.id} value={exercise.id}>
-                      {exercise.name}
-                    </option>
-                  ))}
-                </Select>
-              </FieldLabel>
-              {routine.muscleGroups.length > 0 && (
-                <label className="flex items-center gap-1 text-sm text-fg-muted">
-                  <input
-                    type="checkbox"
-                    checked={viewAllExercises}
-                    onChange={(event) => setViewAllExercises(event.target.checked)}
-                  />
-                  Ver todos los ejercicios (no solo {routine.muscleGroups.join(", ")})
-                </label>
-              )}
-              <div className="grid grid-cols-2 gap-2">
-                <FieldLabel>
-                  Orden
-                  <Input
-                    type="number"
-                    min={1}
-                    value={order}
-                    onChange={(event) => setOrder(Number(event.target.value))}
-                  />
-                </FieldLabel>
-                <FieldLabel>
-                  Superserie (opcional)
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="1, 2..."
-                    value={supersetSlot}
-                    onChange={(event) => setSupersetSlot(event.target.value)}
-                  />
-                </FieldLabel>
-              </div>
-              <FieldLabel>
-                Objetivo
-                <Select
-                  value={goal}
-                  onChange={(event) => setGoal(event.target.value as TrainingGoal)}
-                >
-                  <option value="STRENGTH">Fuerza</option>
-                  <option value="HYPERTROPHY">Hipertrofia</option>
-                  <option value="ENDURANCE">Resistencia</option>
-                </Select>
-              </FieldLabel>
-              <FieldLabel>
-                Series
-                <Input
-                  type="number"
-                  min={1}
-                  value={targetSets}
-                  onChange={(event) => setTargetSets(Number(event.target.value))}
-                />
-              </FieldLabel>
-              <div className="grid grid-cols-2 gap-2">
-                <FieldLabel>
-                  Reps min
-                  <Input
-                    type="number"
-                    value={targetRepMin}
-                    onChange={(event) => setTargetRepMin(event.target.value)}
-                  />
-                </FieldLabel>
-                <FieldLabel>
-                  Reps max
-                  <Input
-                    type="number"
-                    value={targetRepMax}
-                    onChange={(event) => setTargetRepMax(event.target.value)}
-                  />
-                </FieldLabel>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => repRangeSuggestion.mutate()}
-                disabled={!selectedExercise || repRangeSuggestion.isPending}
-              >
-                Usar sugerencia
-              </Button>
-              {addError && (
-                <p role="alert" className="text-sm text-danger">
-                  {addError}
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={addExercise.isPending}>
-                  Agregar
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowAddForm(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <Button variant="secondary" onClick={() => setShowAddForm(true)}>
-              Agregar ejercicio
-            </Button>
           )}
         </>
       )}

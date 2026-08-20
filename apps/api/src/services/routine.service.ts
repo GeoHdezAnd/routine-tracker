@@ -43,9 +43,9 @@ export async function createRoutine(userId: string, input: RoutineInput) {
   });
 }
 
-export async function listRoutinesForUser(userId: string) {
+export async function listRoutinesForUser(userId: string, archived = false) {
   return prisma.routine.findMany({
-    where: { userId },
+    where: { userId, archived },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -72,7 +72,11 @@ export async function getRoutineById(userId: string, id: string) {
   });
 }
 
-export async function updateRoutine(userId: string, id: string, input: Partial<RoutineInput>) {
+export async function updateRoutine(
+  userId: string,
+  id: string,
+  input: Partial<RoutineInput> & { archived?: boolean },
+) {
   await findOwnedRoutine(userId, id);
   return prisma.routine.update({ where: { id }, data: input });
 }

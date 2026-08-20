@@ -121,6 +121,28 @@ describe("GET /routines", () => {
     expect(names).toContain("Owner Routine");
     expect(names).not.toContain("Other Routine");
   });
+
+  it("excludes archived routines by default and includes them when archived=true", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+
+    const createResponse = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "To Archive" });
+    await request(app)
+      .patch(`/routines/${createResponse.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ archived: true });
+
+    const activeResponse = await request(app).get("/routines").set("Authorization", `Bearer ${token}`);
+    const archivedResponse = await request(app)
+      .get("/routines?archived=true")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(activeResponse.body.map((routine: { name: string }) => routine.name)).not.toContain("To Archive");
+    expect(archivedResponse.body.map((routine: { name: string }) => routine.name)).toContain("To Archive");
+  });
 });
 
 describe("GET /routines/:id", () => {
@@ -257,6 +279,28 @@ describe("PATCH /routines/:id", () => {
       .send({ name: "Hijacked" });
 
     expect(response.status).toBe(404);
+  });
+
+  it("archives and unarchives a routine", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+    const createResponse = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Push Day" });
+    const routineId = createResponse.body.id;
+
+    const archiveResponse = await request(app)
+      .patch(`/routines/${routineId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ archived: true });
+    expect(archiveResponse.body.archived).toBe(true);
+
+    const unarchiveResponse = await request(app)
+      .patch(`/routines/${routineId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ archived: false });
+    expect(unarchiveResponse.body.archived).toBe(false);
   });
 });
 

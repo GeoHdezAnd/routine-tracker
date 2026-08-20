@@ -2,11 +2,11 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, Dumbbell, Plus, X } from "lucide-react";
+import { Archive, ArchiveRestore, Dumbbell, Plus, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
-import { Button, Card, IconButton, Input } from "../../components/ui";
+import { Button, Card, IconButton, Input, Pill } from "../../components/ui";
 
 type Routine = {
   id: string;
@@ -23,11 +23,16 @@ export function RoutinesPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const { data: routines, isLoading } = useQuery({
-    queryKey: ["routines", token],
-    queryFn: () => apiFetch<Routine[]>("/routines", { token }),
+    queryKey: ["routines", token, showArchived],
+    queryFn: () => apiFetch<Routine[]>(`/routines${showArchived ? "?archived=true" : ""}`, { token }),
   });
+
+  function invalidateRoutines() {
+    void queryClient.invalidateQueries({ queryKey: ["routines", token] });
+  }
 
   const createRoutine = useMutation({
     mutationFn: (routineName: string) =>
@@ -35,7 +40,7 @@ export function RoutinesPage() {
     onSuccess: () => {
       setName("");
       setShowCreateForm(false);
-      void queryClient.invalidateQueries({ queryKey: ["routines", token] });
+      invalidateRoutines();
     },
     onError: (mutationError: unknown) => {
       setError(mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado");
@@ -45,6 +50,12 @@ export function RoutinesPage() {
   const startSession = useMutation({
     mutationFn: (routineId: string) => apiFetch<Session>("/sessions", { method: "POST", token, body: { routineId } }),
     onSuccess: (session) => navigate(`/sessions/${session.id}`),
+  });
+
+  const setArchived = useMutation({
+    mutationFn: ({ id, archived }: { id: string; archived: boolean }) =>
+      apiFetch<Routine>(`/routines/${id}`, { method: "PATCH", token, body: { archived } }),
+    onSuccess: () => invalidateRoutines(),
   });
 
   function handleSubmit(event: FormEvent) {
@@ -68,6 +79,15 @@ export function RoutinesPage() {
         >
           {showCreateForm ? <X className="size-6" /> : <Plus className="size-6" />}
         </IconButton>
+      </div>
+
+      <div className="flex gap-2">
+        <Pill active={!showArchived} onClick={() => setShowArchived(false)}>
+          Activas
+        </Pill>
+        <Pill active={showArchived} onClick={() => setShowArchived(true)}>
+          Archivadas
+        </Pill>
       </div>
 
       {showCreateForm && (
@@ -95,7 +115,9 @@ export function RoutinesPage() {
       {isLoading && <p className="text-fg-muted">Cargando...</p>}
 
       {!isLoading && routines && routines.length === 0 && (
-        <p className="text-fg-muted">Todavía no tenés rutinas, creá la primera.</p>
+        <p className="text-fg-muted">
+          {showArchived ? "No tenés rutinas archivadas." : "Todavía no tenés rutinas, creá la primera."}
+        </p>
       )}
 
       {routines && routines.length > 0 && (
@@ -113,17 +135,34 @@ export function RoutinesPage() {
                     Creada el {new Date(routine.createdAt).toLocaleDateString()}
                   </p>
                 </Link>
-                <button
-                  type="button"
-                  disabled={startSession.isPending}
-                  onClick={() => startSession.mutate(routine.id)}
-                  className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 ${color.soft} ${color.fg}`}
-                >
-                  Iniciar
-                </button>
-                <Link to={`/routines/${routine.id}`} className="shrink-0 text-fg-subtle">
-                  <ChevronRight className="size-4" />
-                </Link>
+                {showArchived ? (
+                  <IconButton
+                    aria-label="Restaurar rutina"
+                    disabled={setArchived.isPending}
+                    onClick={() => setArchived.mutate({ id: routine.id, archived: false })}
+                  >
+                    <ArchiveRestore className="size-5" />
+                  </IconButton>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={startSession.isPending}
+                      onClick={() => startSession.mutate(routine.id)}
+                      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 ${color.soft} ${color.fg}`}
+                    >
+                      Iniciar
+                    </button>
+                    <IconButton
+                      aria-label="Archivar rutina"
+                      className="size-8"
+                      disabled={setArchived.isPending}
+                      onClick={() => setArchived.mutate({ id: routine.id, archived: true })}
+                    >
+                      <Archive className="size-4" />
+                    </IconButton>
+                  </>
+                )}
               </div>
             );
           })}
