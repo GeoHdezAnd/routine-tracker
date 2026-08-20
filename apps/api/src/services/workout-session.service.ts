@@ -25,7 +25,7 @@ export class SessionAlreadyFinishedError extends Error {
 
 export class RoutineHasNoExercisesError extends Error {
   constructor() {
-    super("La rutina no tiene ejercicios, agregá al menos uno antes de iniciar una sesión");
+    super("La rutina no tiene ejercicios, agrega al menos uno antes de iniciar una sesión");
     this.name = "RoutineHasNoExercisesError";
   }
 }

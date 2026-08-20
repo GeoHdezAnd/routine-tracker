@@ -540,7 +540,7 @@ export function RoutineDetailPage() {
                 <FieldLabel>
                   Ejercicio
                   <Select value={exerciseId} onChange={(event) => setExerciseId(event.target.value)}>
-                    <option value="">Elegí un ejercicio</option>
+                    <option value="">Elige un ejercicio</option>
                     {exercisesData?.data.map((exercise) => (
                       <option key={exercise.id} value={exercise.id}>
                         {exercise.name}
@@ -643,7 +643,7 @@ export function RoutineDetailPage() {
 
           {routine.exercises.length === 0 ? (
             <p className="text-fg-muted">
-              Esta rutina todavía no tiene ejercicios. Agregá al menos uno para poder iniciar una sesión.
+              Esta rutina todavía no tiene ejercicios. Agrega al menos uno para poder iniciar una sesión.
             </p>
           ) : (
             <Card className="divide-y divide-border overflow-hidden p-0">

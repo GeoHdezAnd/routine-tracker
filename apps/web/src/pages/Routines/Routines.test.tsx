@@ -67,7 +67,7 @@ describe("RoutinesPage", () => {
 
     renderWithProviders(["/routines"]);
 
-    expect(await screen.findByText("Todavía no tenés rutinas, creá la primera.")).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no tienes rutinas, crea la primera.")).toBeInTheDocument();
   });
 
   it("archiva una rutina y la muestra en la pestaña de archivadas", async () => {
@@ -77,7 +77,7 @@ describe("RoutinesPage", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Archivar rutina" }));
 
-    expect(await screen.findByText("Todavía no tenés rutinas, creá la primera.")).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no tienes rutinas, crea la primera.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Archivadas"));
 

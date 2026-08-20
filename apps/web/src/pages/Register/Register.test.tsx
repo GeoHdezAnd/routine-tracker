@@ -69,7 +69,7 @@ describe("RegisterPage", () => {
     fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "supersecret" } });
     fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
-    expect(await screen.findByText("Todavía no tenés rutinas, creá la primera.")).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no tienes rutinas, crea la primera.")).toBeInTheDocument();
   });
 
   it("muestra un error cuando el registro falla", async () => {

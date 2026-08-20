@@ -116,7 +116,7 @@ export function RoutinesPage() {
 
       {!isLoading && routines && routines.length === 0 && (
         <p className="text-fg-muted">
-          {showArchived ? "No tenés rutinas archivadas." : "Todavía no tenés rutinas, creá la primera."}
+          {showArchived ? "No tienes rutinas archivadas." : "Todavía no tienes rutinas, crea la primera."}
         </p>
       )}
 

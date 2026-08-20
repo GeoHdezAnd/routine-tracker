@@ -65,9 +65,9 @@ export function RegisterPage() {
         </Button>
       </form>
       <p className="text-sm text-fg-muted">
-        ¿Ya tenés cuenta?{" "}
+        ¿Ya tienes cuenta?{" "}
         <Link to="/login" className="font-medium text-accent">
-          Iniciá sesión
+          Inicia sesión
         </Link>
       </p>
     </main>

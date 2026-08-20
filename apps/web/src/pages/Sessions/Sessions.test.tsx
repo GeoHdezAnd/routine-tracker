@@ -90,7 +90,7 @@ describe("SessionsPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Nueva sesión libre" }));
 
-    expect(await screen.findByText("← Volver a sesiones")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Finalizar" })).toBeInTheDocument();
   });
 
   it("borra una sesión desde el diálogo de confirmación", async () => {

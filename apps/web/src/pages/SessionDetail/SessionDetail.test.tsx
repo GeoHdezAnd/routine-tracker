@@ -20,13 +20,13 @@ type Session = {
   setLogs: SetLog[];
 };
 
-const EXERCISES = [{ id: "ex1", name: "Sentadilla" }];
+const EXERCISES = [{ id: "ex1", name: "Sentadilla", muscleGroup: "Piernas" }];
 
 function baseSession(overrides: Partial<Session> = {}): Session {
   return {
     id: "sess1",
     routineId: null,
-    startedAt: "2024-01-15T10:00:00.000Z",
+    startedAt: new Date().toISOString(),
     finishedAt: null,
     setLogs: [],
     ...overrides,
@@ -60,27 +60,26 @@ function stubApi(initialSession: Session) {
         return new Response(JSON.stringify({ data: EXERCISES }), { status: 200 });
       }
       if (url.endsWith(`/sessions/${session.id}/logs`) && init?.method === "POST") {
-        const body = JSON.parse(String(init.body)) as {
-          exerciseId: string;
-          weightKg: number;
-          reps: number;
-          rir?: number;
-          note?: string;
-        };
+        const body = JSON.parse(String(init.body)) as { exerciseId: string; weightKg: number; reps: number };
         const newLog: SetLog = {
           id: `log-${session.setLogs.length + 1}`,
           exerciseId: body.exerciseId,
-          setNumber: session.setLogs.length + 1,
+          setNumber: session.setLogs.filter((log) => log.exerciseId === body.exerciseId).length + 1,
           weightKg: body.weightKg,
           reps: body.reps,
-          rir: body.rir ?? null,
-          note: body.note ?? null,
+          rir: null,
+          note: null,
         };
         session = { ...session, setLogs: [...session.setLogs, newLog] };
         return new Response(JSON.stringify(newLog), { status: 201 });
       }
+      if (url.match(/\/sessions\/[^/]+\/logs\/[^/]+$/) && init?.method === "DELETE") {
+        const logId = url.split("/").pop();
+        session = { ...session, setLogs: session.setLogs.filter((log) => log.id !== logId) };
+        return new Response(null, { status: 204 });
+      }
       if (url.endsWith(`/sessions/${session.id}/finish`) && init?.method === "POST") {
-        session = { ...session, finishedAt: "2024-01-15T11:00:00.000Z" };
+        session = { ...session, finishedAt: new Date().toISOString() };
         return new Response(JSON.stringify(session), { status: 200 });
       }
       return new Response(JSON.stringify({ error: "No encontrado" }), { status: 404 });
@@ -102,47 +101,51 @@ describe("SessionDetailPage", () => {
   it("renderiza las series registradas de la sesión", async () => {
     stubApi(
       baseSession({
-        setLogs: [
-          { id: "log1", exerciseId: "ex1", setNumber: 1, weightKg: 60, reps: 8, rir: 2, note: null },
-        ],
+        setLogs: [{ id: "log1", exerciseId: "ex1", setNumber: 1, weightKg: 60, reps: 8, rir: 2, note: null }],
       }),
     );
 
     renderWithProviders(["/sessions/sess1"]);
 
-    expect(await screen.findByText("Sentadilla", { selector: "p" })).toBeInTheDocument();
-    expect(screen.getByText(/Serie 1: 60kg x 8 reps/)).toBeInTheDocument();
+    expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
+    expect(screen.getByText("Piernas")).toBeInTheDocument();
+    expect(screen.getByText("60")).toBeInTheDocument();
+    expect(screen.getByText("8")).toBeInTheDocument();
   });
 
-  it("agrega una nueva serie", async () => {
+  it("agrega un ejercicio y registra una serie", async () => {
     stubApi(baseSession());
 
     renderWithProviders(["/sessions/sess1"]);
 
-    await screen.findByText("Todavía no registraste ninguna serie.");
+    expect(await screen.findByText("Todavía no agregaste ejercicios a esta sesión.")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Ejercicio"), { target: { value: "ex1" } });
-    fireEvent.change(screen.getByLabelText("Peso (kg)"), { target: { value: "50" } });
-    fireEvent.change(screen.getByLabelText("Reps"), { target: { value: "10" } });
-    fireEvent.click(screen.getByRole("button", { name: "Registrar serie" }));
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "ex1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Agregar" }));
 
-    expect(await screen.findByText(/Serie 1: 50kg x 10 reps/)).toBeInTheDocument();
+    expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Peso serie 1 de Sentadilla"), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText("Repeticiones serie 1 de Sentadilla"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar serie 1 de Sentadilla" }));
+
+    expect(await screen.findByText("50")).toBeInTheDocument();
+    expect(screen.getByText("10")).toBeInTheDocument();
   });
 
   it("finaliza la sesión y oculta las acciones de edición", async () => {
     stubApi(
       baseSession({
-        setLogs: [
-          { id: "log1", exerciseId: "ex1", setNumber: 1, weightKg: 60, reps: 8, rir: 2, note: null },
-        ],
+        setLogs: [{ id: "log1", exerciseId: "ex1", setNumber: 1, weightKg: 60, reps: 8, rir: 2, note: null }],
       }),
     );
 
     renderWithProviders(["/sessions/sess1"]);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Finalizar sesión" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Finalizar" }));
 
     expect(await screen.findByText("Finalizada")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Registrar serie" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Borrar serie" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Agregar serie" })).not.toBeInTheDocument();
   });
 });

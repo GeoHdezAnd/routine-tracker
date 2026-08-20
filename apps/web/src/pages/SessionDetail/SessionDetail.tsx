@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, ChevronLeft, Plus, Trash2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
-import { apiFetch, ApiError } from "../../lib/api";
-import { Button, Card, FieldLabel, Input, Select } from "../../components/ui";
+import { apiFetch } from "../../lib/api";
+import { colorForLabel } from "../../lib/colors";
+import { Button, IconButton, Select } from "../../components/ui";
 
 type SetLog = {
   id: string;
@@ -24,20 +26,20 @@ type Session = {
   setLogs: SetLog[];
 };
 
-type Exercise = { id: string; name: string };
+type Exercise = { id: string; name: string; muscleGroup: string };
 type ExercisesResponse = { data: Exercise[] };
 
-function groupByExercise(logs: SetLog[]): Map<string, SetLog[]> {
-  const groups = new Map<string, SetLog[]>();
-  for (const log of logs) {
-    const group = groups.get(log.exerciseId);
-    if (group) {
-      group.push(log);
-    } else {
-      groups.set(log.exerciseId, [log]);
-    }
-  }
-  return groups;
+type RoutineExercise = { targetSets: number; exercise: Exercise };
+type RoutineDetail = { name: string; exercises: RoutineExercise[] };
+
+type DraftRow = { key: number; weightKg: string; reps: string };
+
+type ExerciseEntry = { exerciseId: string; name: string; muscleGroup: string; targetSets: number | null };
+
+function formatElapsed(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
 export function SessionDetailPage() {
@@ -45,19 +47,13 @@ export function SessionDetailPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
-  const [exerciseId, setExerciseId] = useState("");
-  const [weightKg, setWeightKg] = useState("");
-  const [reps, setReps] = useState("");
-  const [rir, setRir] = useState("");
-  const [note, setNote] = useState("");
-  const [logError, setLogError] = useState<string | null>(null);
-
-  const [editingLogId, setEditingLogId] = useState<string | null>(null);
-  const [editWeightKg, setEditWeightKg] = useState("");
-  const [editReps, setEditReps] = useState("");
-  const [editRir, setEditRir] = useState("");
-  const [editNote, setEditNote] = useState("");
-  const [editError, setEditError] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, DraftRow[]>>({});
+  const [manualExerciseIds, setManualExerciseIds] = useState<string[]>([]);
+  const [hiddenExerciseIds, setHiddenExerciseIds] = useState<string[]>([]);
+  const [newExerciseId, setNewExerciseId] = useState("");
+  const [elapsed, setElapsed] = useState(0);
+  const nextDraftKey = useRef(0);
+  const hasSeededDrafts = useRef(false);
 
   const { data: session, isLoading } = useQuery({
     queryKey: ["session", id, token],
@@ -65,39 +61,77 @@ export function SessionDetailPage() {
     enabled: id !== undefined,
   });
 
+  const { data: routine } = useQuery({
+    queryKey: ["routine", session?.routineId, token],
+    queryFn: () => apiFetch<RoutineDetail>(`/routines/${session!.routineId}`, { token }),
+    enabled: session?.routineId !== null && session?.routineId !== undefined,
+  });
+
   const { data: exercisesData } = useQuery({
     queryKey: ["exercises-for-session", token],
     queryFn: () => apiFetch<ExercisesResponse>("/exercises?limit=100", { token }),
   });
 
-  const exerciseNames = new Map((exercisesData?.data ?? []).map((exercise) => [exercise.id, exercise.name]));
+  const isFinished = session?.finishedAt !== null && session?.finishedAt !== undefined;
+
+  useEffect(() => {
+    if (!session || isFinished) return;
+    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [session, isFinished]);
+
+  const routineExerciseEntries: ExerciseEntry[] =
+    routine?.exercises.map((re) => ({
+      exerciseId: re.exercise.id,
+      name: re.exercise.name,
+      muscleGroup: re.exercise.muscleGroup,
+      targetSets: re.targetSets,
+    })) ?? [];
+
+  useEffect(() => {
+    if (hasSeededDrafts.current || !session) return;
+    if (session.routineId && !routine) return;
+    hasSeededDrafts.current = true;
+
+    const loggedCounts = new Map<string, number>();
+    for (const log of session.setLogs) {
+      loggedCounts.set(log.exerciseId, (loggedCounts.get(log.exerciseId) ?? 0) + 1);
+    }
+
+    const seeded: Record<string, DraftRow[]> = {};
+    for (const entry of routineExerciseEntries) {
+      const missing = (entry.targetSets ?? 0) - (loggedCounts.get(entry.exerciseId) ?? 0);
+      if (missing > 0) {
+        seeded[entry.exerciseId] = Array.from({ length: missing }, () => ({
+          key: nextDraftKey.current++,
+          weightKg: "",
+          reps: "",
+        }));
+      }
+    }
+    setDrafts(seeded);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, routine]);
 
   function invalidateSession() {
     void queryClient.invalidateQueries({ queryKey: ["session", id] });
   }
 
   const addLog = useMutation({
-    mutationFn: () =>
+    mutationFn: (input: { exerciseId: string; weightKg: number; reps: number; draftKey: number }) =>
       apiFetch(`/sessions/${id}/logs`, {
         method: "POST",
         token,
-        body: {
-          exerciseId,
-          weightKg: Number(weightKg),
-          reps: Number(reps),
-          rir: rir ? Number(rir) : undefined,
-          note: note || undefined,
-        },
+        body: { exerciseId: input.exerciseId, weightKg: input.weightKg, reps: input.reps },
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       invalidateSession();
-      setWeightKg("");
-      setReps("");
-      setRir("");
-      setNote("");
-    },
-    onError: (mutationError: unknown) => {
-      setLogError(mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado");
+      setDrafts((current) => ({
+        ...current,
+        [variables.exerciseId]: (current[variables.exerciseId] ?? []).filter((row) => row.key !== variables.draftKey),
+      }));
     },
   });
 
@@ -106,231 +140,247 @@ export function SessionDetailPage() {
     onSuccess: () => invalidateSession(),
   });
 
-  const updateLog = useMutation({
-    mutationFn: (logId: string) =>
-      apiFetch(`/sessions/${id}/logs/${logId}`, {
-        method: "PATCH",
-        token,
-        body: {
-          weightKg: Number(editWeightKg),
-          reps: Number(editReps),
-          rir: editRir ? Number(editRir) : undefined,
-          note: editNote || undefined,
-        },
-      }),
-    onSuccess: () => {
-      setEditingLogId(null);
-      invalidateSession();
-    },
-    onError: (mutationError: unknown) => {
-      setEditError(
-        mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado",
-      );
-    },
-  });
-
-  function startEditingLog(log: SetLog) {
-    setEditingLogId(log.id);
-    setEditWeightKg(String(log.weightKg));
-    setEditReps(String(log.reps));
-    setEditRir(log.rir !== null ? String(log.rir) : "");
-    setEditNote(log.note ?? "");
-    setEditError(null);
-  }
-
   const finishSession = useMutation({
     mutationFn: () => apiFetch(`/sessions/${id}/finish`, { method: "POST", token }),
     onSuccess: () => invalidateSession(),
   });
 
-  function handleAddLog(event: FormEvent) {
-    event.preventDefault();
-    setLogError(null);
-    if (!exerciseId || !weightKg || !reps) return;
-    addLog.mutate();
+  function updateDraft(exerciseId: string, key: number, field: "weightKg" | "reps", value: string) {
+    setDrafts((current) => ({
+      ...current,
+      [exerciseId]: (current[exerciseId] ?? []).map((row) => (row.key === key ? { ...row, [field]: value } : row)),
+    }));
   }
 
-  const isFinished = session?.finishedAt !== null && session?.finishedAt !== undefined;
+  function addDraftRow(exerciseId: string) {
+    setDrafts((current) => ({
+      ...current,
+      [exerciseId]: [...(current[exerciseId] ?? []), { key: nextDraftKey.current++, weightKg: "", reps: "" }],
+    }));
+  }
+
+  function removeDraftRow(exerciseId: string, key: number) {
+    setDrafts((current) => ({
+      ...current,
+      [exerciseId]: (current[exerciseId] ?? []).filter((row) => row.key !== key),
+    }));
+  }
+
+  function saveDraftRow(exerciseId: string, row: DraftRow) {
+    const weightKg = Number(row.weightKg);
+    const reps = Number(row.reps);
+    if (!row.weightKg || !row.reps || Number.isNaN(weightKg) || Number.isNaN(reps)) return;
+    addLog.mutate({ exerciseId, weightKg, reps, draftKey: row.key });
+  }
+
+  function handleAddExercise(event: FormEvent) {
+    event.preventDefault();
+    if (!newExerciseId) return;
+    setManualExerciseIds((current) => (current.includes(newExerciseId) ? current : [...current, newExerciseId]));
+    setDrafts((current) => ({
+      ...current,
+      [newExerciseId]: current[newExerciseId] ?? [{ key: nextDraftKey.current++, weightKg: "", reps: "" }],
+    }));
+    setNewExerciseId("");
+  }
+
+  if (isLoading || !session) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-8 pb-24 text-fg">
+        <Link to="/sessions" className="flex items-center gap-0.5 text-sm font-medium text-accent">
+          <ChevronLeft className="size-4" />
+          Sesiones
+        </Link>
+        {isLoading && <p className="text-fg-muted">Cargando...</p>}
+      </main>
+    );
+  }
+
+  const exerciseById = new Map((exercisesData?.data ?? []).map((exercise) => [exercise.id, exercise]));
+  const loggedExerciseIds = new Set(session.setLogs.map((log) => log.exerciseId));
+
+  const extraEntries: ExerciseEntry[] = [...loggedExerciseIds, ...manualExerciseIds]
+    .filter((exId, index, all) => all.indexOf(exId) === index)
+    .filter((exId) => !routineExerciseEntries.some((entry) => entry.exerciseId === exId))
+    .map((exId) => {
+      const exercise = exerciseById.get(exId);
+      return { exerciseId: exId, name: exercise?.name ?? exId, muscleGroup: exercise?.muscleGroup ?? "", targetSets: null };
+    });
+
+  const entries = [...routineExerciseEntries, ...extraEntries].filter(
+    (entry) => !hiddenExerciseIds.includes(entry.exerciseId),
+  );
+
+  const totalTarget = routine ? routineExerciseEntries.reduce((sum, entry) => sum + (entry.targetSets ?? 0), 0) : null;
+  const addedExerciseIds = new Set(entries.map((entry) => entry.exerciseId));
+  const availableToAdd = (exercisesData?.data ?? []).filter((exercise) => !addedExerciseIds.has(exercise.id));
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-8 pb-24 text-fg">
-      <Link to="/sessions" className="text-sm text-fg-muted underline">
-        ← Volver a sesiones
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-8 pb-24 text-fg">
+      <Link to="/sessions" className="flex items-center gap-0.5 text-sm font-medium text-accent">
+        <ChevronLeft className="size-4" />
+        Sesiones
       </Link>
 
-      {isLoading && <p className="text-fg-muted">Cargando...</p>}
-
-      {session && (
-        <>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-semibold">Sesión</h1>
-              <p className="text-sm text-fg-muted">{new Date(session.startedAt).toLocaleString()}</p>
-            </div>
-            {isFinished ? (
-              <span className="text-sm text-fg-subtle">Finalizada</span>
-            ) : (
-              <Button variant="secondary" onClick={() => finishSession.mutate()} disabled={finishSession.isPending}>
-                Finalizar sesión
-              </Button>
-            )}
-          </div>
-
-          {session.setLogs.length === 0 && <p className="text-fg-muted">Todavía no registraste ninguna serie.</p>}
-
-          <ul className="flex flex-col gap-3">
-            {[...groupByExercise(session.setLogs).entries()].map(([exId, logs]) => (
-              <li key={exId}>
-                <p className="mb-1 font-medium">{exerciseNames.get(exId) ?? exId}</p>
-                <ul className="flex flex-col gap-1">
-                  {logs.map((log) =>
-                    editingLogId === log.id ? (
-                      <Card key={log.id} className="flex flex-col gap-2">
-                        <form
-                          className="flex flex-col gap-2"
-                          onSubmit={(event) => {
-                            event.preventDefault();
-                            updateLog.mutate(log.id);
-                          }}
-                        >
-                          <div className="grid grid-cols-2 gap-2">
-                            <FieldLabel>
-                              Peso (kg)
-                              <Input
-                                type="number"
-                                inputMode="decimal"
-                                value={editWeightKg}
-                                onChange={(event) => setEditWeightKg(event.target.value)}
-                              />
-                            </FieldLabel>
-                            <FieldLabel>
-                              Reps
-                              <Input
-                                type="number"
-                                inputMode="numeric"
-                                value={editReps}
-                                onChange={(event) => setEditReps(event.target.value)}
-                              />
-                            </FieldLabel>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <FieldLabel>
-                              RIR (opcional)
-                              <Input
-                                type="number"
-                                min={0}
-                                max={5}
-                                value={editRir}
-                                onChange={(event) => setEditRir(event.target.value)}
-                              />
-                            </FieldLabel>
-                            <FieldLabel>
-                              Nota (opcional)
-                              <Input value={editNote} onChange={(event) => setEditNote(event.target.value)} />
-                            </FieldLabel>
-                          </div>
-                          {editError && (
-                            <p role="alert" className="text-sm text-danger">
-                              {editError}
-                            </p>
-                          )}
-                          <div className="flex gap-2">
-                            <Button type="submit" className="px-3 py-1 text-sm" disabled={updateLog.isPending}>
-                              Guardar
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              className="px-3 py-1 text-sm"
-                              onClick={() => setEditingLogId(null)}
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        </form>
-                      </Card>
-                    ) : (
-                      <Card key={log.id} className="flex items-center justify-between">
-                        <span className="text-sm">
-                          Serie {log.setNumber}: {log.weightKg}kg x {log.reps} reps
-                          {log.rir !== null ? ` · RIR ${log.rir}` : ""}
-                          {log.note ? ` · ${log.note}` : ""}
-                        </span>
-                        {!isFinished && (
-                          <div className="flex shrink-0 gap-2">
-                            <Button
-                              variant="secondary"
-                              className="px-2 py-1 text-xs"
-                              onClick={() => startEditingLog(log)}
-                            >
-                              Editar
-                            </Button>
-                            <Button
-                              variant="danger"
-                              className="px-2 py-1 text-xs"
-                              onClick={() => deleteLog.mutate(log.id)}
-                            >
-                              Borrar
-                            </Button>
-                          </div>
-                        )}
-                      </Card>
-                    ),
-                  )}
-                </ul>
-              </li>
-            ))}
-          </ul>
-
-          {!isFinished && (
-            <form onSubmit={handleAddLog} className="flex flex-col gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-              <FieldLabel>
-                Ejercicio
-                <Select value={exerciseId} onChange={(event) => setExerciseId(event.target.value)}>
-                  <option value="">Elegí un ejercicio</option>
-                  {exercisesData?.data.map((exercise) => (
-                    <option key={exercise.id} value={exercise.id}>
-                      {exercise.name}
-                    </option>
-                  ))}
-                </Select>
-              </FieldLabel>
-              <div className="grid grid-cols-2 gap-2">
-                <FieldLabel>
-                  Peso (kg)
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    value={weightKg}
-                    onChange={(event) => setWeightKg(event.target.value)}
-                  />
-                </FieldLabel>
-                <FieldLabel>
-                  Reps
-                  <Input type="number" inputMode="numeric" value={reps} onChange={(event) => setReps(event.target.value)} />
-                </FieldLabel>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <FieldLabel>
-                  RIR (opcional)
-                  <Input type="number" min={0} max={5} value={rir} onChange={(event) => setRir(event.target.value)} />
-                </FieldLabel>
-                <FieldLabel>
-                  Nota (opcional)
-                  <Input value={note} onChange={(event) => setNote(event.target.value)} />
-                </FieldLabel>
-              </div>
-              {logError && (
-                <p role="alert" className="text-sm text-danger">
-                  {logError}
-                </p>
-              )}
-              <Button type="submit" disabled={addLog.isPending} className="py-3 text-base">
-                Registrar serie
-              </Button>
-            </form>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-fg-muted">{routine?.name ?? "Sesión libre"}</p>
+          <p className="font-mono text-3xl font-bold tabular-nums">{formatElapsed(elapsed)}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-fg-muted">
+            {session.setLogs.length}
+            {totalTarget !== null ? `/${totalTarget}` : ""} series
+          </span>
+          {isFinished ? (
+            <span className="text-sm font-medium text-fg-subtle">Finalizada</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => finishSession.mutate()}
+              disabled={finishSession.isPending}
+              className="rounded-full bg-group-2 px-5 py-2 text-sm font-bold text-white disabled:opacity-50"
+            >
+              Finalizar
+            </button>
           )}
-        </>
+        </div>
+      </div>
+
+      {entries.length === 0 && (
+        <p className="text-fg-muted">Todavía no agregaste ejercicios a esta sesión.</p>
+      )}
+
+      <div className="flex flex-col gap-3">
+        {entries.map((entry) => {
+          const color = colorForLabel(entry.muscleGroup || entry.name);
+          const savedRows = session.setLogs.filter((log) => log.exerciseId === entry.exerciseId);
+          const draftRows = drafts[entry.exerciseId] ?? [];
+
+          return (
+            <div key={entry.exerciseId} className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />
+                <p className="min-w-0 flex-1 truncate font-semibold">{entry.name}</p>
+                {entry.muscleGroup && (
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${color.soft} ${color.fg}`}>
+                    {entry.muscleGroup}
+                  </span>
+                )}
+                {!isFinished && (
+                  <IconButton
+                    aria-label={`Quitar ${entry.name} de la sesión`}
+                    className="size-7 shrink-0"
+                    onClick={() => setHiddenExerciseIds((current) => [...current, entry.exerciseId])}
+                  >
+                    <X className="size-4" />
+                  </IconButton>
+                )}
+              </div>
+
+              <div className="grid grid-cols-[1.5rem_1fr_1fr_2rem] items-center gap-x-2 gap-y-1.5">
+                <span className="text-xs font-medium text-fg-muted uppercase">Set</span>
+                <span className="text-center text-xs font-medium text-fg-muted uppercase">Kg</span>
+                <span className="text-center text-xs font-medium text-fg-muted uppercase">Reps</span>
+                <span />
+
+                {savedRows.map((log) => (
+                  <div key={log.id} className="contents">
+                    <span className="text-sm text-fg-muted">{log.setNumber}</span>
+                    <span className="rounded-lg bg-surface-muted px-2 py-1.5 text-center text-sm font-medium">
+                      {log.weightKg}
+                    </span>
+                    <span className="rounded-lg bg-surface-muted px-2 py-1.5 text-center text-sm font-medium">
+                      {log.reps}
+                    </span>
+                    {isFinished ? (
+                      <span className="flex size-8 items-center justify-center rounded-full bg-group-2-soft text-group-2">
+                        <Check className="size-4" />
+                      </span>
+                    ) : (
+                      <IconButton
+                        aria-label="Borrar serie"
+                        className="size-8 text-danger hover:bg-danger-soft"
+                        onClick={() => deleteLog.mutate(log.id)}
+                      >
+                        <Trash2 className="size-4" />
+                      </IconButton>
+                    )}
+                  </div>
+                ))}
+
+                {!isFinished &&
+                  draftRows.map((row, index) => (
+                    <div key={row.key} className="contents">
+                      <span className="text-sm text-fg-muted">{savedRows.length + index + 1}</span>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        aria-label={`Peso serie ${savedRows.length + index + 1} de ${entry.name}`}
+                        value={row.weightKg}
+                        onChange={(event) => updateDraft(entry.exerciseId, row.key, "weightKg", event.target.value)}
+                        className="w-full rounded-lg border border-border bg-canvas px-2 py-1.5 text-center text-sm font-medium"
+                      />
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        aria-label={`Repeticiones serie ${savedRows.length + index + 1} de ${entry.name}`}
+                        value={row.reps}
+                        onChange={(event) => updateDraft(entry.exerciseId, row.key, "reps", event.target.value)}
+                        className="w-full rounded-lg border border-border bg-canvas px-2 py-1.5 text-center text-sm font-medium"
+                      />
+                      <div className="flex items-center gap-0.5">
+                        <IconButton
+                          aria-label={`Guardar serie ${savedRows.length + index + 1} de ${entry.name}`}
+                          className="size-8"
+                          disabled={!row.weightKg || !row.reps || addLog.isPending}
+                          onClick={() => saveDraftRow(entry.exerciseId, row)}
+                        >
+                          <Check className="size-4" />
+                        </IconButton>
+                        {draftRows.length > 1 && (
+                          <IconButton
+                            aria-label={`Quitar fila de serie ${savedRows.length + index + 1} de ${entry.name}`}
+                            className="size-8 text-fg-subtle"
+                            onClick={() => removeDraftRow(entry.exerciseId, row.key)}
+                          >
+                            <X className="size-3.5" />
+                          </IconButton>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {!isFinished && (
+                <button
+                  type="button"
+                  onClick={() => addDraftRow(entry.exerciseId)}
+                  className="mt-2 flex w-full items-center justify-center gap-1 text-sm font-semibold text-accent"
+                >
+                  <Plus className="size-4" />
+                  Agregar serie
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {!isFinished && availableToAdd.length > 0 && (
+        <form onSubmit={handleAddExercise} className="flex gap-2">
+          <Select value={newExerciseId} onChange={(event) => setNewExerciseId(event.target.value)} className="flex-1">
+            <option value="">Agregar ejercicio...</option>
+            {availableToAdd.map((exercise) => (
+              <option key={exercise.id} value={exercise.id}>
+                {exercise.name}
+              </option>
+            ))}
+          </Select>
+          <Button type="submit" disabled={!newExerciseId} className="shrink-0 px-4">
+            Agregar
+          </Button>
+        </form>
       )}
     </main>
   );

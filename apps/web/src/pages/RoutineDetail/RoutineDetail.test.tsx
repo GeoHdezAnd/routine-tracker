@@ -145,6 +145,6 @@ describe("RoutineDetailPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Iniciar entrenamiento" }));
 
-    expect(await screen.findByText("← Volver a sesiones")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Finalizar" })).toBeInTheDocument();
   });
 });

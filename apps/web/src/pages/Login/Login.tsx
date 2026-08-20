@@ -54,9 +54,9 @@ export function LoginPage() {
         </Button>
       </form>
       <p className="text-sm text-fg-muted">
-        ¿No tenés cuenta?{" "}
+        ¿No tienes cuenta?{" "}
         <Link to="/register" className="font-medium text-accent">
-          Registrate
+          Regístrate
         </Link>
       </p>
     </main>
