@@ -21,9 +21,12 @@ export const routinesRouter = Router();
 const movementTypeEnum = z.enum(["COMPOUND", "ISOLATION"]);
 const goalEnum = z.enum(["STRENGTH", "HYPERTROPHY", "ENDURANCE"]);
 
+const dayOfWeekEnum = z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]);
+
 const routineSchema = z.object({
   name: z.string().min(1),
   muscleGroups: z.array(z.string().min(1)).optional(),
+  trainingDays: z.array(dayOfWeekEnum).optional(),
 });
 const updateRoutineSchema = routineSchema.partial().extend({
   archived: z.boolean().optional(),

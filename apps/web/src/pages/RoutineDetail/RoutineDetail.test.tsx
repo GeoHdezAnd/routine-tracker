@@ -10,13 +10,14 @@ type RoutineExercise = {
   targetSets: number;
   targetRepMin: number;
   targetRepMax: number;
-  exercise: { id: string; name: string; movementType: "COMPOUND" | "ISOLATION" };
+  exercise: { id: string; name: string; muscleGroup: string; movementType: "COMPOUND" | "ISOLATION" };
 };
 
 type Routine = {
   id: string;
   name: string;
   muscleGroups: string[];
+  trainingDays: string[];
   exercises: RoutineExercise[];
 };
 
@@ -25,6 +26,7 @@ function baseRoutine(overrides: Partial<Routine> = {}): Routine {
     id: "r1",
     name: "Push Day",
     muscleGroups: [],
+    trainingDays: [],
     exercises: [
       {
         id: "re1",
@@ -34,7 +36,7 @@ function baseRoutine(overrides: Partial<Routine> = {}): Routine {
         targetSets: 3,
         targetRepMin: 8,
         targetRepMax: 12,
-        exercise: { id: "ex1", name: "Press banca", movementType: "COMPOUND" },
+        exercise: { id: "ex1", name: "Press banca", muscleGroup: "Pecho", movementType: "COMPOUND" },
       },
     ],
     ...overrides,
@@ -107,6 +109,15 @@ describe("RoutineDetailPage", () => {
     expect(await screen.findByText("Push Day")).toBeInTheDocument();
     expect(screen.getByText("Press banca")).toBeInTheDocument();
     expect(screen.getByText(/3 series x 8-12 reps · Hipertrofia/)).toBeInTheDocument();
+    expect(screen.getByText("Pecho")).toBeInTheDocument();
+  });
+
+  it("muestra los días de entreno ordenados por día de semana", async () => {
+    stubApi(baseRoutine({ trainingDays: ["THU", "MON"] }));
+
+    renderWithProviders(["/routines/r1"]);
+
+    expect(await screen.findByText(/1 ejercicio · Lun, Jue/)).toBeInTheDocument();
   });
 
   it("edita un ejercicio y usa la sugerencia de rango de repeticiones", async () => {
@@ -132,7 +143,7 @@ describe("RoutineDetailPage", () => {
 
     await screen.findByText("Push Day");
 
-    fireEvent.click(screen.getByRole("button", { name: "Iniciar sesión" }));
+    fireEvent.click(screen.getByRole("button", { name: "Iniciar entrenamiento" }));
 
     expect(await screen.findByText("← Volver a sesiones")).toBeInTheDocument();
   });

@@ -75,7 +75,7 @@ export function DashboardPage() {
         </section>
       )}
       {data && data.readyToProgress.length === 0 && !isEmpty && (
-        <p className="text-sm text-fg-subtle">Todavía no hay sugerencias — seguí entrenando.</p>
+        <p className="text-sm text-fg-subtle">Todavía no hay sugerencias — sigue entrenando.</p>
       )}
 
       {data && data.recentSessions.length > 0 && (

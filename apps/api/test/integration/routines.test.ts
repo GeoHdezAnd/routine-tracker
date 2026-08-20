@@ -89,6 +89,31 @@ describe("POST /routines", () => {
 
     expect(response.body.muscleGroups).toEqual([]);
   });
+
+  it("creates a routine with trainingDays", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const response = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Push Day", trainingDays: ["MON", "THU"] });
+
+    expect(response.status).toBe(201);
+    expect(response.body.trainingDays).toEqual(["MON", "THU"]);
+  });
+
+  it("returns 400 for an invalid trainingDays value", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const response = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Push Day", trainingDays: ["FUNDAY"] });
+
+    expect(response.status).toBe(400);
+  });
 });
 
 describe("GET /routines", () => {
@@ -279,6 +304,23 @@ describe("PATCH /routines/:id", () => {
       .send({ name: "Hijacked" });
 
     expect(response.status).toBe(404);
+  });
+
+  it("updates trainingDays", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+    const createResponse = await request(app)
+      .post("/routines")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Push Day" });
+
+    const response = await request(app)
+      .patch(`/routines/${createResponse.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ trainingDays: ["TUE", "FRI"] });
+
+    expect(response.status).toBe(200);
+    expect(response.body.trainingDays).toEqual(["TUE", "FRI"]);
   });
 
   it("archives and unarchives a routine", async () => {
