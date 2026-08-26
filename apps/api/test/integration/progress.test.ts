@@ -163,7 +163,7 @@ describe("GET /exercises/:id/progress", () => {
     });
   });
 
-  it("marks isNewPR only on sessions that beat the running best weight", async () => {
+  it("marks isNewPR only on the session holding the current all-time best weight", async () => {
     const app = createApp();
     const token = await registerAndLogin(app, email);
     const exerciseId = await createExercise(app, token);
@@ -184,7 +184,7 @@ describe("GET /exercises/:id/progress", () => {
       .get(`/exercises/${exerciseId}/progress`)
       .set("Authorization", `Bearer ${token}`);
 
-    expect(response.body.sessions.map((s: { isNewPR: boolean }) => s.isNewPR)).toEqual([true, false, true]);
+    expect(response.body.sessions.map((s: { isNewPR: boolean }) => s.isNewPR)).toEqual([false, false, true]);
   });
 
   it("marks isTopOfDay on a single set when multiple sets are logged in one session", async () => {

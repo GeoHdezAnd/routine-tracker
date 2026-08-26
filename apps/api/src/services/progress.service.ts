@@ -79,11 +79,15 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     }
   }
 
-  let runningBest: { weightKg: number; reps: number } | undefined;
-  const sessions = Array.from(sessionsById.entries()).map(([sessionId, { date, logs: sessionLogs }]) => {
+  const orderedSessions = Array.from(sessionsById.entries()).sort(
+    ([, a], [, b]) => a.date.getTime() - b.date.getTime(),
+  );
+
+  const bestSet = findTopSet(logs);
+  const bestVolumeSet = findBestVolumeSet(logs);
+
+  const sessions = orderedSessions.map(([sessionId, { date, logs: sessionLogs }]) => {
     const sessionTopSet = findTopSet(sessionLogs)!;
-    const isNewPR = !runningBest || findTopSet([runningBest, sessionTopSet]) === sessionTopSet;
-    runningBest = isNewPR ? sessionTopSet : runningBest;
 
     return {
       sessionId,
@@ -96,12 +100,9 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
         estimated1RM: calculateEstimated1RM(log.weightKg, log.reps),
         isTopOfDay: log.id === sessionTopSet.id,
       })),
-      isNewPR,
+      isNewPR: sessionTopSet.id === bestSet?.id,
     };
   });
-
-  const bestSet = findTopSet(logs);
-  const bestVolumeSet = findBestVolumeSet(logs);
 
   const summary = {
     sessionCount: sessions.length,

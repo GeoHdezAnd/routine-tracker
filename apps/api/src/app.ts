@@ -25,13 +25,15 @@ export function createApp() {
   );
   app.use(express.json());
 
-  const globalLimiter = rateLimit({
-    windowMs: FIFTEEN_MINUTES,
-    limit: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: RATE_LIMIT_MESSAGE },
-  });
+  function createResourceLimiter() {
+    return rateLimit({
+      windowMs: FIFTEEN_MINUTES,
+      limit: 100,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: RATE_LIMIT_MESSAGE },
+    });
+  }
 
   const authLimiter = rateLimit({
     windowMs: FIFTEEN_MINUTES,
@@ -42,17 +44,15 @@ export function createApp() {
     skip: () => process.env.NODE_ENV === "test",
   });
 
-  app.use(globalLimiter);
-
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
 
   app.use("/auth", authLimiter, authRouter);
-  app.use("/exercises", exercisesRouter);
-  app.use("/routines", routinesRouter);
-  app.use("/sessions", sessionsRouter);
-  app.use("/dashboard", dashboardRouter);
+  app.use("/exercises", createResourceLimiter(), exercisesRouter);
+  app.use("/routines", createResourceLimiter(), routinesRouter);
+  app.use("/sessions", createResourceLimiter(), sessionsRouter);
+  app.use("/dashboard", createResourceLimiter(), dashboardRouter);
 
   return app;
 }
