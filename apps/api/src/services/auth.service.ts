@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { Prisma } from "@prisma/client";
+import { Prisma, type UnitPreference } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 const SALT_ROUNDS = 10;
@@ -89,6 +89,21 @@ export async function loginUser(email: string, password: string) {
 export async function getUserById(id: string) {
   return prisma.user.findUnique({
     where: { id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      birthDate: true,
+      unitPreference: true,
+      createdAt: true,
+    },
+  });
+}
+
+export async function updateUserUnitPreference(id: string, unitPreference: UnitPreference) {
+  return prisma.user.update({
+    where: { id },
+    data: { unitPreference },
     select: {
       id: true,
       email: true,

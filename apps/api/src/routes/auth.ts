@@ -8,6 +8,7 @@ import {
   getUserById,
   loginUser,
   registerUser,
+  updateUserUnitPreference,
 } from "../services/auth.service.js";
 
 export const authRouter = Router();
@@ -22,6 +23,10 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
+});
+
+const updateMeSchema = z.object({
+  unitPreference: z.enum(["KG", "LB"]),
 });
 
 authRouter.post("/register", async (req, res) => {
@@ -48,6 +53,18 @@ authRouter.post("/register", async (req, res) => {
 
 authRouter.get("/me", requireAuth, async (_req, res) => {
   const user = await getUserById(res.locals.userId);
+  const age = user?.birthDate ? calculateAge(user.birthDate) : null;
+  res.status(200).json({ ...user, age });
+});
+
+authRouter.patch("/me", requireAuth, async (req, res) => {
+  const parsed = updateMeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+
+  const user = await updateUserUnitPreference(res.locals.userId, parsed.data.unitPreference);
   const age = user?.birthDate ? calculateAge(user.birthDate) : null;
   res.status(200).json({ ...user, age });
 });
