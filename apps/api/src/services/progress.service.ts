@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { getExerciseById } from "./exercise.service.js";
+import { findBestVolumeSet, findTopSet } from "./set-log.utils.js";
 
 type MovementType = "COMPOUND" | "ISOLATION";
 
@@ -8,17 +9,6 @@ const ISOLATION_INCREMENT = 1;
 
 export function calculateEstimated1RM(weightKg: number, reps: number): number {
   return weightKg * (1 + reps / 30);
-}
-
-type TopSetCandidate = { weightKg: number; reps: number };
-
-function findTopSet<T extends TopSetCandidate>(logs: T[]): T | undefined {
-  return logs.reduce<T | undefined>((best, log) => {
-    if (!best) return log;
-    if (log.weightKg > best.weightKg) return log;
-    if (log.weightKg === best.weightKg && log.reps > best.reps) return log;
-    return best;
-  }, undefined);
 }
 
 type ProgressStatus = { readyToProgress: boolean; suggestedWeightIncrease: number | null };
@@ -79,18 +69,49 @@ export async function getExerciseProgress(userId: string, exerciseId: string) {
     include: { session: { select: { startedAt: true } } },
   });
 
-  const history = logs.map((log) => ({
-    sessionId: log.sessionId,
-    date: log.session.startedAt,
-    weightKg: log.weightKg,
-    reps: log.reps,
-    rir: log.rir,
-    estimated1RM: calculateEstimated1RM(log.weightKg, log.reps),
-  }));
+  const sessionsById = new Map<string, { date: Date; logs: typeof logs }>();
+  for (const log of logs) {
+    const entry = sessionsById.get(log.sessionId);
+    if (entry) {
+      entry.logs.push(log);
+    } else {
+      sessionsById.set(log.sessionId, { date: log.session.startedAt, logs: [log] });
+    }
+  }
+
+  let runningBest: { weightKg: number; reps: number } | undefined;
+  const sessions = Array.from(sessionsById.entries()).map(([sessionId, { date, logs: sessionLogs }]) => {
+    const sessionTopSet = findTopSet(sessionLogs)!;
+    const isNewPR = !runningBest || findTopSet([runningBest, sessionTopSet]) === sessionTopSet;
+    runningBest = isNewPR ? sessionTopSet : runningBest;
+
+    return {
+      sessionId,
+      date,
+      sets: sessionLogs.map((log) => ({
+        id: log.id,
+        weightKg: log.weightKg,
+        reps: log.reps,
+        rir: log.rir,
+        estimated1RM: calculateEstimated1RM(log.weightKg, log.reps),
+        isTopOfDay: log.id === sessionTopSet.id,
+      })),
+      isNewPR,
+    };
+  });
+
+  const bestSet = findTopSet(logs);
+  const bestVolumeSet = findBestVolumeSet(logs);
+
+  const summary = {
+    sessionCount: sessions.length,
+    bestWeightKg: bestSet?.weightKg ?? null,
+    bestVolumeSet: bestVolumeSet ? { weightKg: bestVolumeSet.weightKg, reps: bestVolumeSet.reps } : null,
+  };
 
   const status = await computeProgressStatus(userId, exerciseId, exercise.movementType as MovementType);
 
-  return { history, ...status };
+  return { summary, sessions, ...status };
 }
 
 export async function getReadyToProgressForUser(userId: string) {

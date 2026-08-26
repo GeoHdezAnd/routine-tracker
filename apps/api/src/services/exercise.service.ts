@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { getPersonalRecordsForExercises } from "./set-log.utils.js";
 
 type MovementType = "COMPOUND" | "ISOLATION";
 
@@ -70,7 +71,7 @@ export async function listExercisesForUser(userId: string, filters: ListExercise
     ...(filters.movementType ? { movementType: filters.movementType } : {}),
   };
 
-  const [data, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     prisma.exercise.findMany({
       where,
       orderBy: { createdAt: "asc" },
@@ -79,6 +80,15 @@ export async function listExercisesForUser(userId: string, filters: ListExercise
     }),
     prisma.exercise.count({ where }),
   ]);
+
+  const personalRecords = await getPersonalRecordsForExercises(
+    userId,
+    rows.map((exercise) => exercise.id),
+  );
+  const data = rows.map((exercise) => ({
+    ...exercise,
+    personalRecord: personalRecords.get(exercise.id) ?? null,
+  }));
 
   return { data, total };
 }
