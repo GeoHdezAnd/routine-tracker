@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../lib/auth";
 import { apiFetch } from "../../lib/api";
+import { kgToDisplay, unitLabel } from "../../lib/units";
 import { Card } from "../../components/ui";
 
 type HistoryEntry = {
@@ -22,7 +23,8 @@ type ExerciseProgress = {
 
 export function ExerciseProgressPage() {
   const { id } = useParams<{ id: string }>();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const unit = user?.unitPreference ?? "KG";
 
   const { data, isLoading } = useQuery({
     queryKey: ["exercise-progress", id, token],
@@ -32,8 +34,8 @@ export function ExerciseProgressPage() {
 
   const chartData = (data?.history ?? []).map((entry) => ({
     date: new Date(entry.date).toLocaleDateString(),
-    weightKg: entry.weightKg,
-    estimated1RM: Math.round(entry.estimated1RM * 10) / 10,
+    weightDisplay: kgToDisplay(entry.weightKg, unit),
+    estimated1RM: kgToDisplay(entry.estimated1RM, unit),
   }));
 
   return (
@@ -49,7 +51,7 @@ export function ExerciseProgressPage() {
       {data?.readyToProgress && (
         <Card className="border-group-2/30 bg-group-2-soft">
           <span className="font-medium text-group-2">
-            Listo para subir peso: +{data.suggestedWeightIncrease}kg
+            Listo para subir peso: +{kgToDisplay(data.suggestedWeightIncrease ?? 0, unit)}{unitLabel(unit)}
           </span>
         </Card>
       )}

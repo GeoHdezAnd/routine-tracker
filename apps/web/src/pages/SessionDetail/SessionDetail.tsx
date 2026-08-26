@@ -6,6 +6,7 @@ import { Check, ChevronLeft, Plus, Trash2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
+import { displayToKg, kgToDisplay, unitLabel } from "../../lib/units";
 import { Button, IconButton, Select } from "../../components/ui";
 
 type SetLog = {
@@ -32,7 +33,7 @@ type ExercisesResponse = { data: Exercise[] };
 type RoutineExercise = { targetSets: number; exercise: Exercise };
 type RoutineDetail = { name: string; exercises: RoutineExercise[] };
 
-type DraftRow = { key: number; weightKg: string; reps: string };
+type DraftRow = { key: number; weightDisplay: string; reps: string };
 
 type ExerciseEntry = { exerciseId: string; name: string; muscleGroup: string; targetSets: number | null };
 
@@ -44,7 +45,8 @@ function formatElapsed(seconds: number): string {
 
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const unit = user?.unitPreference ?? "KG";
   const queryClient = useQueryClient();
 
   const [drafts, setDrafts] = useState<Record<string, DraftRow[]>>({});
@@ -106,7 +108,7 @@ export function SessionDetailPage() {
       if (missing > 0) {
         seeded[entry.exerciseId] = Array.from({ length: missing }, () => ({
           key: nextDraftKey.current++,
-          weightKg: "",
+          weightDisplay: "",
           reps: "",
         }));
       }
@@ -145,7 +147,7 @@ export function SessionDetailPage() {
     onSuccess: () => invalidateSession(),
   });
 
-  function updateDraft(exerciseId: string, key: number, field: "weightKg" | "reps", value: string) {
+  function updateDraft(exerciseId: string, key: number, field: "weightDisplay" | "reps", value: string) {
     setDrafts((current) => ({
       ...current,
       [exerciseId]: (current[exerciseId] ?? []).map((row) => (row.key === key ? { ...row, [field]: value } : row)),
@@ -155,7 +157,7 @@ export function SessionDetailPage() {
   function addDraftRow(exerciseId: string) {
     setDrafts((current) => ({
       ...current,
-      [exerciseId]: [...(current[exerciseId] ?? []), { key: nextDraftKey.current++, weightKg: "", reps: "" }],
+      [exerciseId]: [...(current[exerciseId] ?? []), { key: nextDraftKey.current++, weightDisplay: "", reps: "" }],
     }));
   }
 
@@ -167,9 +169,10 @@ export function SessionDetailPage() {
   }
 
   function saveDraftRow(exerciseId: string, row: DraftRow) {
-    const weightKg = Number(row.weightKg);
+    const weightDisplay = Number(row.weightDisplay);
     const reps = Number(row.reps);
-    if (!row.weightKg || !row.reps || Number.isNaN(weightKg) || Number.isNaN(reps)) return;
+    if (!row.weightDisplay || !row.reps || Number.isNaN(weightDisplay) || Number.isNaN(reps)) return;
+    const weightKg = displayToKg(weightDisplay, unit);
     addLog.mutate({ exerciseId, weightKg, reps, draftKey: row.key });
   }
 
@@ -179,7 +182,7 @@ export function SessionDetailPage() {
     setManualExerciseIds((current) => (current.includes(newExerciseId) ? current : [...current, newExerciseId]));
     setDrafts((current) => ({
       ...current,
-      [newExerciseId]: current[newExerciseId] ?? [{ key: nextDraftKey.current++, weightKg: "", reps: "" }],
+      [newExerciseId]: current[newExerciseId] ?? [{ key: nextDraftKey.current++, weightDisplay: "", reps: "" }],
     }));
     setNewExerciseId("");
   }
@@ -280,7 +283,7 @@ export function SessionDetailPage() {
 
               <div className="grid grid-cols-[1.5rem_1fr_1fr_2rem] items-center gap-x-2 gap-y-1.5">
                 <span className="text-xs font-medium text-fg-muted uppercase">Set</span>
-                <span className="text-center text-xs font-medium text-fg-muted uppercase">Kg</span>
+                <span className="text-center text-xs font-medium text-fg-muted uppercase">{unitLabel(unit)}</span>
                 <span className="text-center text-xs font-medium text-fg-muted uppercase">Reps</span>
                 <span />
 
@@ -288,7 +291,7 @@ export function SessionDetailPage() {
                   <div key={log.id} className="contents">
                     <span className="text-sm text-fg-muted">{log.setNumber}</span>
                     <span className="rounded-lg bg-surface-muted px-2 py-1.5 text-center text-sm font-medium">
-                      {log.weightKg}
+                      {kgToDisplay(log.weightKg, unit)}
                     </span>
                     <span className="rounded-lg bg-surface-muted px-2 py-1.5 text-center text-sm font-medium">
                       {log.reps}
@@ -317,8 +320,8 @@ export function SessionDetailPage() {
                         type="number"
                         inputMode="decimal"
                         aria-label={`Peso serie ${savedRows.length + index + 1} de ${entry.name}`}
-                        value={row.weightKg}
-                        onChange={(event) => updateDraft(entry.exerciseId, row.key, "weightKg", event.target.value)}
+                        value={row.weightDisplay}
+                        onChange={(event) => updateDraft(entry.exerciseId, row.key, "weightDisplay", event.target.value)}
                         className="w-full rounded-lg border border-border bg-canvas px-2 py-1.5 text-center text-sm font-medium"
                       />
                       <input
@@ -333,7 +336,7 @@ export function SessionDetailPage() {
                         <IconButton
                           aria-label={`Guardar serie ${savedRows.length + index + 1} de ${entry.name}`}
                           className="size-8"
-                          disabled={!row.weightKg || !row.reps || addLog.isPending}
+                          disabled={!row.weightDisplay || !row.reps || addLog.isPending}
                           onClick={() => saveDraftRow(entry.exerciseId, row)}
                         >
                           <Check className="size-4" />
