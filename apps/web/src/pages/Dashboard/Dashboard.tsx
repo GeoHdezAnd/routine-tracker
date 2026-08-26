@@ -4,6 +4,7 @@ import { CalendarClock, ChevronRight, Dumbbell, TrendingUp } from "lucide-react"
 import { useAuth } from "../../lib/auth";
 import { apiFetch } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
+import { formatRelativeDate } from "../../lib/dates";
 import { Card } from "../../components/ui";
 
 type RecentSession = {
@@ -45,16 +46,6 @@ function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-}
-
-function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const startOfDay = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate());
-  const diffDays = Math.round((startOfDay(new Date()).getTime() - startOfDay(date).getTime()) / 86_400_000);
-  if (diffDays === 0) return "Hoy";
-  if (diffDays === 1) return "Ayer";
-  if (diffDays > 1 && diffDays < 7) return `Hace ${diffDays} d`;
-  return date.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
 }
 
 export function DashboardPage() {

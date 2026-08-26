@@ -9,11 +9,28 @@ type Exercise = {
   equipmentType: string;
   movementType: "COMPOUND" | "ISOLATION";
   ownerId: string | null;
+  personalRecord: { weightKg: number; reps: number } | null;
 };
 
 const ALL_EXERCISES: Exercise[] = [
-  { id: "ex1", name: "Sentadilla", muscleGroup: "Pierna", equipmentType: "Barra", movementType: "COMPOUND", ownerId: null },
-  { id: "ex2", name: "Press banca", muscleGroup: "Pecho", equipmentType: "Barra", movementType: "COMPOUND", ownerId: null },
+  {
+    id: "ex1",
+    name: "Sentadilla",
+    muscleGroup: "Pierna",
+    equipmentType: "Barra",
+    movementType: "COMPOUND",
+    ownerId: null,
+    personalRecord: { weightKg: 100, reps: 5 },
+  },
+  {
+    id: "ex2",
+    name: "Press banca",
+    muscleGroup: "Pecho",
+    equipmentType: "Barra",
+    movementType: "COMPOUND",
+    ownerId: null,
+    personalRecord: null,
+  },
 ];
 
 const LEG_EXERCISES = ALL_EXERCISES.filter((exercise) => exercise.muscleGroup === "Pierna");
@@ -66,6 +83,16 @@ describe("ExercisesPage", () => {
     expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
     expect(screen.getByText("Press banca")).toBeInTheDocument();
     expect(screen.getAllByText("Barra · Compuesto")).toHaveLength(2);
+  });
+
+  it("muestra el PR solo en los ejercicios con series registradas", async () => {
+    stubMeAndExercises();
+
+    renderWithProviders(["/exercises"]);
+
+    expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
+    expect(screen.getByText("100kg PR")).toBeInTheDocument();
+    expect(screen.getAllByText(/PR$/)).toHaveLength(1);
   });
 
   it("filtra la lista por grupo muscular", async () => {

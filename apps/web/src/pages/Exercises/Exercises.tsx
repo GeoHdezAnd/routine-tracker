@@ -7,6 +7,7 @@ import { ChevronRight, Dumbbell, Pencil, Plus, Search, Trash2, X } from "lucide-
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
+import { kgToDisplay, unitLabel } from "../../lib/units";
 import { Button, Card, FieldLabel, IconButton, Input, Pill, Select } from "../../components/ui";
 
 type Exercise = {
@@ -16,6 +17,7 @@ type Exercise = {
   equipmentType: string;
   movementType: MovementType;
   ownerId: string | null;
+  personalRecord: { weightKg: number; reps: number } | null;
 };
 
 type ExercisesResponse = {
@@ -33,6 +35,7 @@ const MOVEMENT_LABELS: Record<MovementType, string> = {
 
 export function ExercisesPage() {
   const { token, user } = useAuth();
+  const unit = user?.unitPreference ?? "KG";
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -262,6 +265,13 @@ export function ExercisesPage() {
                             {exercise.equipmentType} · {MOVEMENT_LABELS[exercise.movementType]}
                           </p>
                         </Link>
+                      )}
+
+                      {!isEditing && exercise.personalRecord && (
+                        <span className="shrink-0 text-sm font-semibold text-pr">
+                          {kgToDisplay(exercise.personalRecord.weightKg, unit)}
+                          {unitLabel(unit)} PR
+                        </span>
                       )}
 
                       {!isEditing && isOwn && (
