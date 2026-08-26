@@ -107,7 +107,7 @@ describe("GET /exercises/:id/progress", () => {
     expect(response.status).toBe(404);
   });
 
-  it("computes estimated1RM correctly in history", async () => {
+  it("computes estimated1RM correctly for a logged set", async () => {
     const app = createApp();
     const token = await registerAndLogin(app, email);
     const exerciseId = await createExercise(app, token);
@@ -119,9 +119,90 @@ describe("GET /exercises/:id/progress", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.history).toHaveLength(1);
-    expect(response.body.history[0]).toMatchObject({ sessionId, weightKg: 100, reps: 5 });
-    expect(response.body.history[0].estimated1RM).toBeCloseTo(100 * (1 + 5 / 30), 5);
+    expect(response.body.sessions).toHaveLength(1);
+    expect(response.body.sessions[0]).toMatchObject({ sessionId, isNewPR: true });
+    expect(response.body.sessions[0].sets).toHaveLength(1);
+    expect(response.body.sessions[0].sets[0]).toMatchObject({ weightKg: 100, reps: 5, isTopOfDay: true });
+    expect(response.body.sessions[0].sets[0].estimated1RM).toBeCloseTo(100 * (1 + 5 / 30), 5);
+  });
+
+  it("returns empty sessions and null summary when nothing was logged", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    const exerciseId = await createExercise(app, token);
+
+    const response = await request(app)
+      .get(`/exercises/${exerciseId}/progress`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.body.sessions).toEqual([]);
+    expect(response.body.summary).toEqual({ sessionCount: 0, bestWeightKg: null, bestVolumeSet: null });
+  });
+
+  it("computes summary (sessionCount, bestWeightKg, bestVolumeSet) across sessions", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    const exerciseId = await createExercise(app, token);
+
+    const session1 = await startSession(app, token);
+    await logSet(app, token, session1, exerciseId, 60, 10);
+    await finishSession(app, token, session1);
+
+    const session2 = await startSession(app, token);
+    await logSet(app, token, session2, exerciseId, 80, 3);
+    await finishSession(app, token, session2);
+
+    const response = await request(app)
+      .get(`/exercises/${exerciseId}/progress`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.body.summary).toEqual({
+      sessionCount: 2,
+      bestWeightKg: 80,
+      bestVolumeSet: { weightKg: 60, reps: 10 },
+    });
+  });
+
+  it("marks isNewPR only on sessions that beat the running best weight", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    const exerciseId = await createExercise(app, token);
+
+    const session1 = await startSession(app, token);
+    await logSet(app, token, session1, exerciseId, 60, 8);
+    await finishSession(app, token, session1);
+
+    const session2 = await startSession(app, token);
+    await logSet(app, token, session2, exerciseId, 55, 8);
+    await finishSession(app, token, session2);
+
+    const session3 = await startSession(app, token);
+    await logSet(app, token, session3, exerciseId, 65, 8);
+    await finishSession(app, token, session3);
+
+    const response = await request(app)
+      .get(`/exercises/${exerciseId}/progress`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.body.sessions.map((s: { isNewPR: boolean }) => s.isNewPR)).toEqual([true, false, true]);
+  });
+
+  it("marks isTopOfDay on a single set when multiple sets are logged in one session", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    const exerciseId = await createExercise(app, token);
+    const sessionId = await startSession(app, token);
+    await logSet(app, token, sessionId, exerciseId, 60, 10);
+    await logSet(app, token, sessionId, exerciseId, 62.5, 9);
+    await logSet(app, token, sessionId, exerciseId, 62.5, 8);
+
+    const response = await request(app)
+      .get(`/exercises/${exerciseId}/progress`)
+      .set("Authorization", `Bearer ${token}`);
+
+    const topSets = response.body.sessions[0].sets.filter((set: { isTopOfDay: boolean }) => set.isTopOfDay);
+    expect(topSets).toHaveLength(1);
+    expect(topSets[0]).toMatchObject({ weightKg: 62.5, reps: 9 });
   });
 
   it("readyToProgress is false with fewer than 2 qualifying sessions", async () => {

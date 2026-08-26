@@ -10,6 +10,20 @@ async function registerAndLogin(app: ReturnType<typeof createApp>, email: string
   return loginResponse.body.token as string;
 }
 
+async function logSetForExercise(
+  app: ReturnType<typeof createApp>,
+  token: string,
+  exerciseId: string,
+  weightKg: number,
+  reps: number,
+) {
+  const sessionResponse = await request(app).post("/sessions").set("Authorization", `Bearer ${token}`).send({});
+  await request(app)
+    .post(`/sessions/${sessionResponse.body.id}/logs`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ exerciseId, weightKg, reps });
+}
+
 describe("POST /exercises", () => {
   const email = "exercises-post@example.com";
 
@@ -70,6 +84,7 @@ describe("GET /exercises", () => {
   const otherEmail = "exercises-get-other@example.com";
 
   beforeEach(async () => {
+    await prisma.setLog.deleteMany({ where: { exercise: { name: { startsWith: "GET-test" } } } });
     await prisma.exercise.deleteMany({ where: { name: { startsWith: "GET-test" } } });
     await prisma.user.deleteMany({ where: { email: { in: [ownerEmail, otherEmail] } } });
   });
@@ -125,6 +140,67 @@ describe("GET /exercises", () => {
     const response = await request(createApp()).get("/exercises");
 
     expect(response.status).toBe(401);
+  });
+
+  it("includes personalRecord with the heaviest logged set, or null without logs", async () => {
+    const app = createApp();
+    const ownerToken = await registerAndLogin(app, ownerEmail);
+
+    const exerciseResponse = await request(app)
+      .post("/exercises")
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "GET-test PR Curl", muscleGroup: "Arms", equipmentType: "Dumbbell", movementType: "ISOLATION" });
+    const exerciseId = exerciseResponse.body.id as string;
+
+    await logSetForExercise(app, ownerToken, exerciseId, 20, 10);
+    await logSetForExercise(app, ownerToken, exerciseId, 22.5, 6);
+    await logSetForExercise(app, ownerToken, exerciseId, 22.5, 8);
+
+    const noLogsResponse = await request(app)
+      .post("/exercises")
+      .set("Authorization", `Bearer ${ownerToken}`)
+      .send({ name: "GET-test No Logs Curl", muscleGroup: "Arms", equipmentType: "Dumbbell", movementType: "ISOLATION" });
+    const noLogsExerciseId = noLogsResponse.body.id as string;
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ limit: 100 })
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    const byId = new Map(
+      response.body.data.map((exercise: { id: string; personalRecord: unknown }) => [exercise.id, exercise.personalRecord]),
+    );
+    expect(byId.get(exerciseId)).toEqual({ weightKg: 22.5, reps: 8 });
+    expect(byId.get(noLogsExerciseId)).toBeNull();
+  });
+
+  it("does not leak another user's personal record on a shared global exercise", async () => {
+    const app = createApp();
+    const ownerToken = await registerAndLogin(app, ownerEmail);
+    const otherToken = await registerAndLogin(app, otherEmail);
+
+    const globalExercise = await prisma.exercise.create({
+      data: {
+        name: "GET-test Shared Deadlift",
+        muscleGroup: "Back",
+        equipmentType: "Barbell",
+        movementType: "COMPOUND",
+        ownerId: null,
+      },
+    });
+
+    await logSetForExercise(app, otherToken, globalExercise.id, 150, 3);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ limit: 100 })
+      .set("Authorization", `Bearer ${ownerToken}`);
+
+    const ownerView = response.body.data.find((exercise: { id: string }) => exercise.id === globalExercise.id);
+    expect(ownerView.personalRecord).toBeNull();
+
+    await prisma.setLog.deleteMany({ where: { exerciseId: globalExercise.id } });
+    await prisma.exercise.delete({ where: { id: globalExercise.id } });
   });
 });
 
