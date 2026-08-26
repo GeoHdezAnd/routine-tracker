@@ -167,3 +167,50 @@ describe("GET /auth/me", () => {
     expect(response.body.age).toBe(10);
   });
 });
+
+describe("PATCH /auth/me", () => {
+  const email = "patch-me-test@example.com";
+  const password = "supersecret123";
+
+  beforeEach(async () => {
+    await prisma.user.deleteMany({ where: { email } });
+  });
+
+  it("returns 401 when no Authorization header is sent", async () => {
+    const response = await request(createApp()).patch("/auth/me").send({ unitPreference: "LB" });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("returns 400 when unitPreference is invalid", async () => {
+    const app = createApp();
+    await request(app).post("/auth/register").send({ email, password });
+    const loginResponse = await request(app).post("/auth/login").send({ email, password });
+    const token = loginResponse.body.token;
+
+    const response = await request(app)
+      .patch("/auth/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ unitPreference: "OZ" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("updates and persists unitPreference", async () => {
+    const app = createApp();
+    await request(app).post("/auth/register").send({ email, password });
+    const loginResponse = await request(app).post("/auth/login").send({ email, password });
+    const token = loginResponse.body.token;
+
+    const patchResponse = await request(app)
+      .patch("/auth/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ unitPreference: "LB" });
+
+    expect(patchResponse.status).toBe(200);
+    expect(patchResponse.body).toMatchObject({ unitPreference: "LB" });
+
+    const meResponse = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`);
+    expect(meResponse.body.unitPreference).toBe("LB");
+  });
+});
