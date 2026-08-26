@@ -17,7 +17,7 @@ type ExerciseProgress = {
   suggestedWeightIncrease: number | null;
 };
 
-function stubMeAndProgress(progress: ExerciseProgress) {
+function stubMeAndProgress(progress: ExerciseProgress, unitPreference: "KG" | "LB" = "KG") {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) => {
@@ -29,7 +29,7 @@ function stubMeAndProgress(progress: ExerciseProgress) {
             name: "Geo",
             birthDate: null,
             age: null,
-            unitPreference: "KG",
+            unitPreference,
             createdAt: "2024-01-01",
           }),
           { status: 200 },
@@ -78,6 +78,22 @@ describe("ExerciseProgressPage", () => {
     expect(await screen.findByText(/Listo para subir peso: \+2.5kg/)).toBeInTheDocument();
     expect(await screen.findByText(/60kg x 8/)).toBeInTheDocument();
     expect(screen.getByText(/62.5kg x 8/)).toBeInTheDocument();
+  });
+
+  it("convierte los pesos a libras cuando esa es la preferencia del usuario", async () => {
+    stubMeAndProgress(
+      {
+        history: [{ sessionId: "s1", date: "2024-01-05T00:00:00.000Z", weightKg: 60, reps: 8, rir: 2, estimated1RM: 72.5 }],
+        readyToProgress: true,
+        suggestedWeightIncrease: 2.5,
+      },
+      "LB",
+    );
+
+    renderWithProviders(["/exercises/e1/progress"]);
+
+    expect(await screen.findByText(/Listo para subir peso: \+5.5lb/)).toBeInTheDocument();
+    expect(await screen.findByText(/132.3lb x 8/)).toBeInTheDocument();
   });
 
   it("muestra el estado vacío cuando no hay series registradas", async () => {

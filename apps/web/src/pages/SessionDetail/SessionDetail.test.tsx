@@ -33,7 +33,7 @@ function baseSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
-function stubApi(initialSession: Session) {
+function stubApi(initialSession: Session, unitPreference: "KG" | "LB" = "KG") {
   let session = initialSession;
 
   vi.stubGlobal(
@@ -47,7 +47,7 @@ function stubApi(initialSession: Session) {
             name: "Geo",
             birthDate: null,
             age: null,
-            unitPreference: "KG",
+            unitPreference,
             createdAt: "2024-01-01",
           }),
           { status: 200 },
@@ -131,6 +131,38 @@ describe("SessionDetailPage", () => {
 
     expect(await screen.findByText("50")).toBeInTheDocument();
     expect(screen.getByText("10")).toBeInTheDocument();
+  });
+
+  it("muestra el peso convertido cuando la preferencia es libras", async () => {
+    stubApi(
+      baseSession({
+        setLogs: [{ id: "log1", exerciseId: "ex1", setNumber: 1, weightKg: 100, reps: 8, rir: 2, note: null }],
+      }),
+      "LB",
+    );
+
+    renderWithProviders(["/sessions/sess1"]);
+
+    expect(await screen.findByText("220.5")).toBeInTheDocument();
+  });
+
+  it("convierte a kg el peso ingresado en libras al guardar", async () => {
+    stubApi(baseSession(), "LB");
+
+    renderWithProviders(["/sessions/sess1"]);
+
+    expect(await screen.findByText("Todavía no agregaste ejercicios a esta sesión.")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "ex1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Agregar" }));
+
+    expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Peso serie 1 de Sentadilla"), { target: { value: "220" } });
+    fireEvent.change(screen.getByLabelText("Repeticiones serie 1 de Sentadilla"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar serie 1 de Sentadilla" }));
+
+    expect(await screen.findByText("220")).toBeInTheDocument();
   });
 
   it("finaliza la sesión y oculta las acciones de edición", async () => {

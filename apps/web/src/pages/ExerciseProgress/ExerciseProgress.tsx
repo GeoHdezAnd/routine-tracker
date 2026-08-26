@@ -51,7 +51,7 @@ export function ExerciseProgressPage() {
       {data?.readyToProgress && (
         <Card className="border-group-2/30 bg-group-2-soft">
           <span className="font-medium text-group-2">
-            Listo para subir peso: +{kgToDisplay(data.suggestedWeightIncrease ?? 0, unit)}{unitLabel(unit)}
+            Listo para subir peso: +{kgToDisplay(data.suggestedWeightIncrease!, unit)}{unitLabel(unit)}
           </span>
         </Card>
       )}
@@ -77,8 +77,8 @@ export function ExerciseProgressPage() {
                 />
                 <Line
                   type="monotone"
-                  dataKey="weightKg"
-                  name="Peso (kg)"
+                  dataKey="weightDisplay"
+                  name={`Peso (${unitLabel(unit)})`}
                   stroke="var(--color-accent)"
                   strokeWidth={2}
                   dot={false}
@@ -100,10 +100,12 @@ export function ExerciseProgressPage() {
               <Card key={`${entry.sessionId}-${entry.date}-${entry.weightKg}-${entry.reps}`} className="flex items-center justify-between">
                 <span className="text-sm text-fg-muted">{new Date(entry.date).toLocaleDateString()}</span>
                 <span className="text-sm">
-                  {entry.weightKg}kg x {entry.reps}
+                  {kgToDisplay(entry.weightKg, unit)}{unitLabel(unit)} x {entry.reps}
                   {entry.rir !== null ? ` · RIR ${entry.rir}` : ""}
                 </span>
-                <span className="text-sm text-fg-subtle">1RM ~{Math.round(entry.estimated1RM)}kg</span>
+                <span className="text-sm text-fg-subtle">
+                  1RM ~{Math.round(kgToDisplay(entry.estimated1RM, unit))}{unitLabel(unit)}
+                </span>
               </Card>
             ))}
           </ul>
