@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronLeft, Plus, Trash2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
-import { apiFetch } from "../../lib/api";
+import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
 import { displayToKg, kgToDisplay, unitLabel } from "../../lib/units";
 import { Button, IconButton, Select } from "../../components/ui";
@@ -54,6 +54,7 @@ export function SessionDetailPage() {
   const [hiddenExerciseIds, setHiddenExerciseIds] = useState<string[]>([]);
   const [newExerciseId, setNewExerciseId] = useState("");
   const [elapsed, setElapsed] = useState(0);
+  const [logError, setLogError] = useState<string | null>(null);
   const nextDraftKey = useRef(0);
   const hasSeededDrafts = useRef(false);
 
@@ -77,7 +78,14 @@ export function SessionDetailPage() {
   const isFinished = session?.finishedAt !== null && session?.finishedAt !== undefined;
 
   useEffect(() => {
-    if (!session || isFinished) return;
+    if (!session) return;
+
+    if (isFinished) {
+      const finishedAt = session.finishedAt!;
+      setElapsed(Math.max(0, Math.floor((new Date(finishedAt).getTime() - new Date(session.startedAt).getTime()) / 1000)));
+      return;
+    }
+
     const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000)));
     tick();
     const interval = setInterval(tick, 1000);
@@ -129,11 +137,15 @@ export function SessionDetailPage() {
         body: { exerciseId: input.exerciseId, weightKg: input.weightKg, reps: input.reps },
       }),
     onSuccess: (_data, variables) => {
+      setLogError(null);
       invalidateSession();
       setDrafts((current) => ({
         ...current,
         [variables.exerciseId]: (current[variables.exerciseId] ?? []).filter((row) => row.key !== variables.draftKey),
       }));
+    },
+    onError: (error: unknown) => {
+      setLogError(error instanceof ApiError ? error.message : "No se pudo guardar la serie, revisá tu conexión.");
     },
   });
 
@@ -249,6 +261,12 @@ export function SessionDetailPage() {
           )}
         </div>
       </div>
+
+      {logError && (
+        <p role="alert" className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">
+          {logError}
+        </p>
+      )}
 
       {entries.length === 0 && (
         <p className="text-fg-muted">Todavía no agregaste ejercicios a esta sesión.</p>

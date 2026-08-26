@@ -82,7 +82,7 @@ describe("ExerciseProgressPage", () => {
         {
           sessionId: "s1",
           date: "2024-01-05T00:00:00.000Z",
-          isNewPR: true,
+          isNewPR: false,
           sets: [{ id: "set1", weightKg: 60, reps: 8, rir: 2, estimated1RM: 72.5, isTopOfDay: true }],
         },
         {
@@ -113,7 +113,7 @@ describe("ExerciseProgressPage", () => {
     expect(screen.getByText(/60kg × 8/)).toBeInTheDocument();
     expect(screen.getByText(/55kg × 8/)).toBeInTheDocument();
     expect(screen.getByText(/62.5kg × 8/)).toBeInTheDocument();
-    expect(screen.getAllByText("PR")).toHaveLength(2);
+    expect(screen.getAllByText("PR")).toHaveLength(1);
   });
 
   it("convierte los pesos a libras cuando esa es la preferencia del usuario", async () => {
