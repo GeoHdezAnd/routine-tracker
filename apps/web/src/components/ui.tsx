@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 
@@ -46,6 +48,28 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
       {...props}
       className={`w-full rounded-xl border border-border bg-surface px-3 py-2 text-base text-fg placeholder:text-fg-subtle ${props.className ?? ""}`}
     />
+  );
+}
+
+export function PasswordInput({ className = "", ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, "type">) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <input
+        {...props}
+        type={visible ? "text" : "password"}
+        className={`w-full rounded-xl border border-border bg-surface px-3 py-2 pr-10 text-base text-fg placeholder:text-fg-subtle ${className}`}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((current) => !current)}
+        aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-fg-muted hover:text-fg"
+      >
+        {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
   );
 }
 
