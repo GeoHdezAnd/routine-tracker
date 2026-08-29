@@ -67,6 +67,7 @@ describe("RegisterPage", () => {
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "new@user.com" } });
     fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "supersecret" } });
+    fireEvent.change(screen.getByLabelText("Confirmar contraseña"), { target: { value: "supersecret" } });
     fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(await screen.findByText("Todavía no tienes rutinas, crea la primera.")).toBeInTheDocument();
@@ -79,6 +80,7 @@ describe("RegisterPage", () => {
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "dup@user.com" } });
     fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "supersecret" } });
+    fireEvent.change(screen.getByLabelText("Confirmar contraseña"), { target: { value: "supersecret" } });
     fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("El email ya está registrado");
