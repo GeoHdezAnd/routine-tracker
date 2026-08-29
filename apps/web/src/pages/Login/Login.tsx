@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { ApiError } from "../../lib/api";
-import { Button, FieldLabel, Input } from "../../components/ui";
+import { Button, FieldLabel, Input, PasswordInput } from "../../components/ui";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -37,8 +37,7 @@ export function LoginPage() {
         </FieldLabel>
         <FieldLabel>
           Contraseña
-          <Input
-            type="password"
+          <PasswordInput
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
