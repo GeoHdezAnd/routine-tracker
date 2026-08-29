@@ -13,10 +13,10 @@ services:
     # COPY pnpm-workspace.yaml / packages/shared desde ahí.
     dockerfilePath: apps/api/Dockerfile
     dockerContext: .
-    # Corre las migraciones pendientes antes de levantar el server en cada
-    # deploy. "prisma migrate deploy" es idempotente: no rompe nada si no
-    # hay migraciones nuevas.
-    dockerCommand: sh -c "pnpm exec prisma migrate deploy && node dist/index.js"
+    # El comando de arranque (migrar + levantar el server) vive en
+    # apps/api/docker-entrypoint.sh, horneado en la imagen — Render no
+    # interpreta "&&" en dockerCommand como una shell normal, así que no lo
+    # ponemos acá.
     healthCheckPath: /health
     envVars:
       # Connection string pooled de Neon (hostname con -pooler) — tráfico normal
