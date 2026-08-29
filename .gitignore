@@ -3,8 +3,6 @@ dist
 build
 .env
 .env.local
-.env.qa
-.neon
 *.log
 .DS_Store
 apps/api/prisma/generated
@@ -15,3 +13,6 @@ REQUIREMENTS.md
 ARCHITECTURE_NOTES.md
 REQUESTS.md
 docs/
+.agents/
+.claude/
+skills-lock.json
