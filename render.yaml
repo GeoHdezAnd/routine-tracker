@@ -1,0 +1,37 @@
+# Blueprint de Render para el entorno de QA del api.
+# Al importar este archivo en Render ("New > Blueprint"), te va a pedir cada
+# variable con sync: false una por una — no hace falta tocar este archivo
+# para cargar secretos, solo para cambiar la estructura del servicio.
+services:
+  - name: routine-tracker-api-qa
+    type: web
+    runtime: docker
+    plan: free
+    branch: release/quality
+    autoDeployTrigger: commit
+    # Contexto de build = raíz del repo, porque el Dockerfile hace
+    # COPY pnpm-workspace.yaml / packages/shared desde ahí.
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    # Corre las migraciones pendientes antes de levantar el server en cada
+    # deploy. "prisma migrate deploy" es idempotente: no rompe nada si no
+    # hay migraciones nuevas.
+    dockerCommand: sh -c "pnpm exec prisma migrate deploy && node dist/index.js"
+    healthCheckPath: /health
+    envVars:
+      # Connection string pooled de Neon (hostname con -pooler) — tráfico normal
+      # de la app. Sacala de apps/api/.env.qa (DATABASE_URL) tras "neon env pull".
+      - key: DATABASE_URL
+        sync: false
+      # Connection string directa de Neon (sin -pooler) — la usan las migraciones
+      # de Prisma. Sacala de apps/api/.env.qa (DATABASE_URL_UNPOOLED).
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
+      # Generar con: openssl rand -base64 32
+      - key: JWT_SECRET
+        sync: false
+      # URL pública que te da Cloudflare Pages al crear el sitio (paso 2 del plan).
+      - key: WEB_ORIGIN
+        sync: false
+      - key: NODE_ENV
+        value: production

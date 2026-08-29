@@ -1,7 +1,7 @@
-# Auto-merged by Compose on top of docker-compose.yml — no -f flag needed.
-# Switches api/web to their "dev" build stage and enables Compose Watch, so
-# `docker compose watch` gives hot-reload with zero local setup (no Node/pnpm
-# needed on the host, only Docker). Details: ARCHITECTURE_NOTES.md, section 10.
+# Compose lo mergea automático encima de docker-compose.yml — no hace falta -f.
+# Cambia api/web a su build stage "dev" y habilita Compose Watch, así
+# `docker compose watch` da hot-reload sin instalar nada más que Docker
+# (no hace falta Node/pnpm en tu máquina)
 services:
   api:
     build:
@@ -14,6 +14,12 @@ services:
           path: ./apps/api/src
           target: /app/apps/api/src
         - action: sync
+          path: ./apps/api/test
+          target: /app/apps/api/test
+        - action: sync+restart
+          path: ./apps/api/prisma
+          target: /app/apps/api/prisma
+        - action: sync
           path: ./packages/shared/src
           target: /app/packages/shared/src
         - action: rebuild
@@ -22,9 +28,9 @@ services:
   web:
     build:
       target: dev
-    # ports is a list — Compose concatenates lists across files by default,
-    # so without !override this would ADD 5173 next to the base file's
-    # "8080:80" (which points at nginx, not present in the dev stage).
+    # ports es una lista — Compose concatena listas entre archivos por default,
+    # así que sin !override esto SUMARÍA el 5173 al lado del "8080:80" del
+    # archivo base (que apunta a nginx, que no existe en el stage dev).
     ports: !override
       - "5173:5173"
     develop:

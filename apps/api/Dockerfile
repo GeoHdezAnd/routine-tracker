@@ -1,39 +1,41 @@
-# Multi-stage build. Full walkthrough: ARCHITECTURE_NOTES.md, section 3.
+# Build multi-stage.
 
-# --- base: OS-level deps shared by every other stage ---
+# --- base: dependencias de sistema operativo compartidas por el resto de los stages ---
 FROM node:24-slim AS base
 WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
-# --- deps: install packages, cached as long as package.json/lockfile don't change ---
+# --- deps: instala paquetes, se cachea mientras package.json/lockfile no cambien ---
 FROM base AS deps
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
 RUN pnpm install --frozen-lockfile --filter @routine-tracker/api...
 
-# --- dev: reuses "deps" (already has devDependencies installed), runs the
-# watch server directly instead of compiling — used by docker-compose.override.yml
-# together with Compose Watch. Not used in production. ---
+# --- dev: reusa "deps" (ya tiene las devDependencies instaladas), corre el
+# servidor con watch en vez de compilar — lo usa docker-compose.override.yml
+# junto con Compose Watch. No se usa en producción. ---
 FROM deps AS dev
 COPY apps/api ./apps/api
 COPY packages/shared ./packages/shared
 WORKDIR /app/apps/api
-CMD ["pnpm", "dev"]
+# prisma generate corre acá (no en build-time de la imagen) porque recién en
+# el arranque del contenedor tenemos el DATABASE_URL real de docker-compose.yml.
+CMD ["sh", "-c", "pnpm exec prisma generate && pnpm dev"]
 
-# --- build: now copy source and compile ---
+# --- build: ahora sí copia el código fuente y compila ---
 FROM deps AS build
 COPY apps/api ./apps/api
 COPY packages/shared ./packages/shared
-# prisma generate only reads the schema, it never connects — this placeholder
-# satisfies prisma.config.ts's env() check at build time.
+# prisma generate solo lee el schema, nunca se conecta — este placeholder
+# satisface el chequeo de env() de prisma.config.ts en tiempo de build.
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5433/placeholder"
 RUN pnpm --filter @routine-tracker/api prisma:generate
 RUN pnpm --filter @routine-tracker/api build
 
-# --- runtime: starts fresh from "base", not "build" — no TypeScript, no
-# devDependencies, no source .ts files, just the compiled output ---
+# --- runtime: arranca de nuevo desde "base", no desde "build" — sin TypeScript,
+# sin devDependencies, sin los .ts fuente, solo el output compilado ---
 FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /app/apps/api/dist ./apps/api/dist

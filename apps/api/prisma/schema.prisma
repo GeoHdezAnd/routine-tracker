@@ -26,6 +26,8 @@ model User {
   id             String         @id @default(cuid())
   email          String         @unique
   passwordHash   String
+  name           String?
+  birthDate      DateTime?
   unitPreference UnitPreference @default(KG)
   createdAt      DateTime       @default(now())
 
@@ -41,7 +43,7 @@ model Exercise {
   equipmentType String
   movementType  MovementType
   ownerId       String?
-  owner         User?        @relation(fields: [ownerId], references: [id])
+  owner         User?        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt     DateTime     @default(now())
 
   routineExercises RoutineExercise[]
@@ -49,11 +51,14 @@ model Exercise {
 }
 
 model Routine {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  name      String
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  muscleGroups  String[] @default([])
+  trainingDays  String[] @default([])
+  archived      Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   exercises RoutineExercise[]
   sessions  WorkoutSession[]
@@ -64,8 +69,9 @@ model RoutineExercise {
   routineId    String
   routine      Routine      @relation(fields: [routineId], references: [id], onDelete: Cascade)
   exerciseId   String
-  exercise     Exercise     @relation(fields: [exerciseId], references: [id])
+  exercise     Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   order        Int
+  supersetSlot Int?
   goal         TrainingGoal
   targetSets   Int
   targetRepMin Int
@@ -77,7 +83,7 @@ model RoutineExercise {
 model WorkoutSession {
   id         String    @id @default(cuid())
   userId     String
-  user       User      @relation(fields: [userId], references: [id])
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   routineId  String?
   routine    Routine?  @relation(fields: [routineId], references: [id])
   startedAt  DateTime  @default(now())
@@ -93,7 +99,7 @@ model SetLog {
   sessionId  String
   session    WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   exerciseId String
-  exercise   Exercise       @relation(fields: [exerciseId], references: [id])
+  exercise   Exercise       @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
   setNumber  Int
   weightKg   Float
   reps       Int
