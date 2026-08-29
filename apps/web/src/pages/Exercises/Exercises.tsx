@@ -55,11 +55,10 @@ export function ExercisesPage() {
   const [editName, setEditName] = useState("");
 
   const query = new URLSearchParams({ limit: "100" });
-  if (equipmentType) query.set("equipmentType", equipmentType);
   if (movementType) query.set("movementType", movementType);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["exercises", token, equipmentType, movementType],
+    queryKey: ["exercises", token, movementType],
     queryFn: () => apiFetch<ExercisesResponse>(`/exercises?${query.toString()}`, { token }),
   });
 
@@ -68,14 +67,20 @@ export function ExercisesPage() {
     [data],
   );
 
+  const equipmentTypes = useMemo(
+    () => Array.from(new Set(data?.data.map((exercise) => exercise.equipmentType) ?? [])).sort(),
+    [data],
+  );
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (data?.data ?? []).filter((exercise) => {
       if (muscleGroup && exercise.muscleGroup !== muscleGroup) return false;
+      if (equipmentType && exercise.equipmentType !== equipmentType) return false;
       if (term && !exercise.name.toLowerCase().includes(term)) return false;
       return true;
     });
-  }, [data, muscleGroup, search]);
+  }, [data, muscleGroup, equipmentType, search]);
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Exercise[]>();
@@ -175,7 +180,14 @@ export function ExercisesPage() {
       >
         <summary className="cursor-pointer text-sm font-medium text-fg-muted">Filtros avanzados</summary>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Input placeholder="Equipo" value={equipmentType} onChange={(event) => setEquipmentType(event.target.value)} />
+          <Select value={equipmentType} onChange={(event) => setEquipmentType(event.target.value)}>
+            <option value="">Equipo</option>
+            {equipmentTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </Select>
           <Select value={movementType} onChange={(event) => setMovementType(event.target.value as MovementType | "")}>
             <option value="">Movimiento</option>
             <option value="COMPOUND">Compuesto</option>
