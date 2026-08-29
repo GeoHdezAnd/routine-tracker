@@ -1,0 +1,26 @@
+name: Branch Flow Guard
+
+on:
+  pull_request:
+    branches: [release/quality, main]
+
+jobs:
+  branch-flow-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate source branch
+        run: |
+          BASE="${{ github.base_ref }}"
+          HEAD="${{ github.head_ref }}"
+
+          if [ "$BASE" = "release/quality" ] && [ "$HEAD" != "release/developer" ]; then
+            echo "release/quality only accepts merges from release/developer (got '$HEAD')"
+            exit 1
+          fi
+
+          if [ "$BASE" = "main" ] && [ "$HEAD" != "release/quality" ]; then
+            echo "main only accepts merges from release/quality (got '$HEAD')"
+            exit 1
+          fi
+
+          echo "OK: $HEAD -> $BASE"
