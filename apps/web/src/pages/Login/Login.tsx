@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { ApiError } from "../../lib/api";
 import { Button, FieldLabel, Input, PasswordInput } from "../../components/ui";
@@ -52,12 +52,6 @@ export function LoginPage() {
           {isSubmitting ? "Ingresando..." : "Ingresar"}
         </Button>
       </form>
-      <p className="text-sm text-fg-muted">
-        ¿No tienes cuenta?{" "}
-        <Link to="/register" className="font-medium text-accent">
-          Regístrate
-        </Link>
-      </p>
     </main>
   );
 }
