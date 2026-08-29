@@ -3,13 +3,14 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../../lib/auth";
 import { ApiError } from "../../lib/api";
-import { Button, FieldLabel, Input } from "../../components/ui";
+import { Button, FieldLabel, Input, PasswordInput } from "../../components/ui";
 
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +19,10 @@ export function RegisterPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
     setIsSubmitting(true);
     try {
       await register(email, password, name || undefined, birthDate || undefined);
@@ -39,12 +44,20 @@ export function RegisterPage() {
         </FieldLabel>
         <FieldLabel>
           Contraseña
-          <Input
-            type="password"
+          <PasswordInput
             required
             minLength={8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+          />
+        </FieldLabel>
+        <FieldLabel>
+          Confirmar contraseña
+          <PasswordInput
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
           />
         </FieldLabel>
         <FieldLabel>
