@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ChevronRight, Dumbbell, TrendingUp } from "lucide-react";
+import { CalendarClock, ChevronRight, Dumbbell, Loader2, TrendingUp } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
 import { formatRelativeDate } from "../../lib/dates";
+import { DAY_LABELS, distanceFromToday, sortDays, todayCode } from "../../lib/days";
 import { Card } from "../../components/ui";
 
 type RecentSession = {
@@ -19,7 +20,13 @@ type RecentSession = {
 
 type TodayRoutine = { routineId: string; routineName: string; exerciseCount: number };
 
-type RoutineSummary = { id: string; name: string };
+type RoutineSummary = {
+  id: string;
+  name: string;
+  trainingDays: string[];
+  muscleGroups: string[];
+  exerciseCount: number;
+};
 
 type ReadyToProgress = { exerciseId: string; exerciseName: string; suggestedWeightIncrease: number };
 
@@ -68,6 +75,17 @@ export function DashboardPage() {
 
   const isEmpty = data && data.recentSessions.length === 0 && data.routines.length === 0;
   const todayColor = data?.today ? colorForLabel(data.today.routineName) : null;
+
+  const today = todayCode();
+  const otherRoutines = (data?.routines ?? [])
+    .filter((routine) => routine.id !== data?.today?.routineId)
+    .sort((a, b) => {
+      const distA =
+        a.trainingDays.length > 0 ? Math.min(...a.trainingDays.map((day) => distanceFromToday(day, today))) : Infinity;
+      const distB =
+        b.trainingDays.length > 0 ? Math.min(...b.trainingDays.map((day) => distanceFromToday(day, today))) : Infinity;
+      return distA !== distB ? distA - distB : a.name.localeCompare(b.name);
+    });
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-4 pb-24 text-fg">
@@ -127,8 +145,9 @@ export function DashboardPage() {
               type="button"
               disabled={startSession.isPending}
               onClick={() => startSession.mutate(data.today!.routineId)}
-              className="shrink-0 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-accent-fg disabled:opacity-50"
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-accent-fg disabled:opacity-50"
             >
+              {startSession.isPending && <Loader2 className="size-3.5 animate-spin" />}
               Iniciar
             </button>
           </Card>
@@ -158,12 +177,56 @@ export function DashboardPage() {
         </section>
       )}
 
+      {otherRoutines.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="px-1 text-xs font-semibold tracking-wide text-fg-muted uppercase">Tus rutinas</h2>
+          <Card className="divide-y divide-border overflow-hidden p-0">
+            {otherRoutines.map((routine) => {
+              const color = colorForLabel(routine.name);
+              return (
+                <Link key={routine.id} to={`/routines/${routine.id}`} className="flex items-center gap-3 px-2 py-2.5">
+                  <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
+                    <Dumbbell className={`size-5 ${color.fg}`} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{routine.name}</p>
+                    <p className="truncate text-xs text-fg-muted">
+                      {routine.exerciseCount} ejercicio{routine.exerciseCount === 1 ? "" : "s"}
+                      {routine.trainingDays.length > 0 &&
+                        ` · ${sortDays(routine.trainingDays)
+                          .map((day) => DAY_LABELS[day as keyof typeof DAY_LABELS])
+                          .join(", ")}`}
+                    </p>
+                    {routine.muscleGroups.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {routine.muscleGroups.map((group) => {
+                          const muscleColor = colorForLabel(group);
+                          return (
+                            <span
+                              key={group}
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${muscleColor.soft} ${muscleColor.fg}`}
+                            >
+                              {group}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-fg-subtle" />
+                </Link>
+              );
+            })}
+          </Card>
+        </section>
+      )}
+
       {data && data.recentSessions.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="px-1 text-xs font-semibold tracking-wide text-fg-muted uppercase">Entrenos recientes</h2>
           <Card className="divide-y divide-border overflow-hidden p-0">
             {data.recentSessions.map((session) => (
-              <Link key={session.id} to={`/sessions/${session.id}`} className="flex items-center gap-3 px-4 py-3">
+              <Link key={session.id} to={`/sessions/${session.id}`} className="flex items-center gap-3 px-2 py-2">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-group-5-soft">
                   <CalendarClock className="size-5 text-group-5" />
                 </span>
@@ -180,26 +243,6 @@ export function DashboardPage() {
                 </span>
               </Link>
             ))}
-          </Card>
-        </section>
-      )}
-
-      {data && data.routines.length > 0 && !data.today && (
-        <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-xs font-semibold tracking-wide text-fg-muted uppercase">Tus rutinas</h2>
-          <Card className="divide-y divide-border overflow-hidden p-0">
-            {data.routines.map((routine) => {
-              const color = colorForLabel(routine.name);
-              return (
-                <Link key={routine.id} to={`/routines/${routine.id}`} className="flex items-center gap-3 px-4 py-3">
-                  <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
-                    <Dumbbell className={`size-5 ${color.fg}`} />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate font-semibold">{routine.name}</span>
-                  <ChevronRight className="size-4 shrink-0 text-fg-subtle" />
-                </Link>
-              );
-            })}
           </Card>
         </section>
       )}

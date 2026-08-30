@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronLeft, Plus, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, Loader2, Plus, Trash2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
@@ -248,14 +248,15 @@ export function SessionDetailPage() {
             {totalTarget !== null ? `/${totalTarget}` : ""} series
           </span>
           {isFinished ? (
-            <span className="text-sm font-medium text-fg-subtle">Finalizada</span>
+            <span className="text-sm font-medium text-gray-400 bg-red-600/20 px-2 py-1 rounded-2xl">Finalizada</span>
           ) : (
             <button
               type="button"
               onClick={() => finishSession.mutate()}
               disabled={finishSession.isPending}
-              className="rounded-full bg-group-2 px-5 py-2 text-sm font-bold text-white disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-full bg-group-2 px-5 py-2 text-sm font-bold text-white disabled:opacity-50"
             >
+              {finishSession.isPending && <Loader2 className="size-4 animate-spin" />}
               Finalizar
             </button>
           )}
@@ -282,12 +283,16 @@ export function SessionDetailPage() {
             <div key={entry.exerciseId} className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm">
               <div className="mb-3 flex items-center gap-2">
                 <span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />
-                <p className="min-w-0 flex-1 truncate font-semibold">{entry.name}</p>
-                {entry.muscleGroup && (
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${color.soft} ${color.fg}`}>
-                    {entry.muscleGroup}
-                  </span>
-                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{entry.name}</p>
+                  {entry.muscleGroup && (
+                    <span
+                      className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${color.soft} ${color.fg}`}
+                    >
+                      {entry.muscleGroup}
+                    </span>
+                  )}
+                </div>
                 {!isFinished && (
                   <IconButton
                     aria-label={`Quitar ${entry.name} de la sesión`}
@@ -357,7 +362,11 @@ export function SessionDetailPage() {
                           disabled={!row.weightDisplay || !row.reps || addLog.isPending}
                           onClick={() => saveDraftRow(entry.exerciseId, row)}
                         >
-                          <Check className="size-4" />
+                          {addLog.isPending && addLog.variables?.draftKey === row.key ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Check className="size-4" />
+                          )}
                         </IconButton>
                         {draftRows.length > 1 && (
                           <IconButton
@@ -390,7 +399,7 @@ export function SessionDetailPage() {
 
       {!isFinished && availableToAdd.length > 0 && (
         <form onSubmit={handleAddExercise} className="flex gap-2">
-          <Select value={newExerciseId} onChange={(event) => setNewExerciseId(event.target.value)} className="flex-1">
+          <Select value={newExerciseId} onChange={setNewExerciseId} className="flex-1">
             <option value="">Agregar ejercicio...</option>
             {availableToAdd.map((exercise) => (
               <option key={exercise.id} value={exercise.id}>

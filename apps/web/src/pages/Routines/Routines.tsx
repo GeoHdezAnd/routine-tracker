@@ -1,27 +1,25 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, ArchiveRestore, Dumbbell, Play, Plus, X } from "lucide-react";
+import { Archive, ArchiveRestore, Dumbbell, Plus, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
-import { apiFetch, ApiError } from "../../lib/api";
-import { colorForLabel } from "../../lib/colors";
-import { Button, Card, IconButton, Input, Pill } from "../../components/ui";
+import { apiFetch } from "../../lib/api";
+import { colorForRoutine } from "../../lib/colors";
+import { Card, IconButton, Pill } from "../../components/ui";
+import { CreateRoutineModal } from "./CreateRoutineModal";
 
 type Routine = {
   id: string;
   name: string;
+  color: string | null;
+  isInPlan: boolean;
   createdAt: string;
 };
-
-type Session = { id: string };
 
 export function RoutinesPage() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
@@ -34,37 +32,11 @@ export function RoutinesPage() {
     void queryClient.invalidateQueries({ queryKey: ["routines", token] });
   }
 
-  const createRoutine = useMutation({
-    mutationFn: (routineName: string) =>
-      apiFetch<Routine>("/routines", { method: "POST", token, body: { name: routineName } }),
-    onSuccess: () => {
-      setName("");
-      setShowCreateForm(false);
-      invalidateRoutines();
-    },
-    onError: (mutationError: unknown) => {
-      setError(mutationError instanceof ApiError ? mutationError.message : "Ocurrió un error inesperado");
-    },
-  });
-
-  const startSession = useMutation({
-    mutationFn: (routineId: string) => apiFetch<Session>("/sessions", { method: "POST", token, body: { routineId } }),
-    onSuccess: (session) => navigate(`/sessions/${session.id}`),
-  });
-
   const setArchived = useMutation({
     mutationFn: ({ id, archived }: { id: string; archived: boolean }) =>
       apiFetch<Routine>(`/routines/${id}`, { method: "PATCH", token, body: { archived } }),
     onSuccess: () => invalidateRoutines(),
   });
-
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    createRoutine.mutate(trimmed);
-  }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-4 pb-24 text-fg">
@@ -91,25 +63,13 @@ export function RoutinesPage() {
       </div>
 
       {showCreateForm && (
-        <Card>
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
-              placeholder="Nombre de la rutina"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              autoFocus
-              className="flex-1"
-            />
-            <Button type="submit" disabled={createRoutine.isPending} className="shrink-0">
-              Crear
-            </Button>
-          </form>
-          {error && (
-            <p role="alert" className="mt-2 text-sm text-danger">
-              {error}
-            </p>
-          )}
-        </Card>
+        <CreateRoutineModal
+          onClose={() => setShowCreateForm(false)}
+          onCreated={(routineId) => {
+            setShowCreateForm(false);
+            navigate(`/routines/${routineId}`);
+          }}
+        />
       )}
 
       {isLoading && <p className="text-fg-muted">Cargando...</p>}
@@ -123,7 +83,7 @@ export function RoutinesPage() {
       {routines && routines.length > 0 && (
         <Card className="divide-y divide-border overflow-hidden p-0">
           {routines.map((routine) => {
-            const color = colorForLabel(routine.name);
+            const color = colorForRoutine(routine);
             return (
               <div key={routine.id} className="flex items-center gap-3 px-1 py-2">
                 <span className={`flex size-8 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
@@ -133,6 +93,7 @@ export function RoutinesPage() {
                   <p className="truncate md:text-sm font-semibold">{routine.name}</p>
                   <p className="truncate text-xs text-fg-muted">
                     Creada el {new Date(routine.createdAt).toLocaleDateString()}
+                    {routine.isInPlan && " · En tu plan"}
                   </p>
                 </Link>
                 {showArchived ? (
@@ -144,25 +105,13 @@ export function RoutinesPage() {
                     <ArchiveRestore className="size-5" />
                   </IconButton>
                 ) : (
-                  <div className="flex">
-                    <button
-                      type="button"
-                      disabled={startSession.isPending}
-                      onClick={() => startSession.mutate(routine.id)}
-                      aria-label="Iniciar rutina"
-                      className="shrink-0 rounded-full bg-green-100 m-1 p-2 text-green-600 transition-colors hover:bg-green-200 disabled:opacity-50"
-                    >
-                      <Play className="h-4 w-4" fill="currentColor" />
-                    </button>
-                    <IconButton
-                      aria-label="Archivar rutina"
-                      className="size-8"
-                      disabled={setArchived.isPending}
-                      onClick={() => setArchived.mutate({ id: routine.id, archived: true })}
-                    >
-                      <Archive className="size-4" />
-                    </IconButton>
-                  </div>
+                  <IconButton
+                    aria-label="Archivar rutina"
+                    disabled={setArchived.isPending}
+                    onClick={() => setArchived.mutate({ id: routine.id, archived: true })}
+                  >
+                    <Archive className="size-4" />
+                  </IconButton>
                 )}
               </div>
             );

@@ -11,6 +11,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 type Session = {
   id: string;
   routineId: string | null;
+  routineName: string | null;
   startedAt: string;
   finishedAt: string | null;
 };
@@ -47,7 +48,7 @@ export function SessionsPage() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-4 pb-24 text-fg">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Sesiones</h1>
-        <Button onClick={() => createSession.mutate()} disabled={createSession.isPending}>
+        <Button onClick={() => createSession.mutate()} loading={createSession.isPending}>
           Nueva sesión libre
         </Button>
       </div>
@@ -59,24 +60,26 @@ export function SessionsPage() {
       {sessions && sessions.length > 0 && (
         <Card className="divide-y divide-border overflow-hidden p-0">
           {sessions.map((session) => (
-            <div key={session.id} className="flex items-center gap-3 px-4 py-3">
+            <div key={session.id} className="flex items-center gap-3 px-2 py-2">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-group-5-soft">
                 <CalendarClock className="size-5 text-group-5" />
               </span>
               <Link to={`/sessions/${session.id}`} className="min-w-0 flex-1">
-                <p className="truncate font-semibold">
-                  {new Date(session.startedAt).toLocaleDateString()}{" "}
-                  {new Date(session.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </p>
-                <p className="text-sm text-fg-muted">{session.routineId ? "Rutina asociada" : "Sesión libre"}</p>
+                <p className="truncate font-semibold">{session.routineName ?? "Sesión libre"}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="min-w-0 flex-1 truncate text-sm text-fg-muted">
+                    {new Date(session.startedAt).toLocaleDateString()}{" "}
+                    {new Date(session.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      session.finishedAt ? "bg-surface-muted text-fg-muted" : "bg-group-2-soft text-group-2"
+                    }`}
+                  >
+                    {session.finishedAt ? "Finalizada" : "En curso"}
+                  </span>
+                </div>
               </Link>
-              <span
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                  session.finishedAt ? "bg-surface-muted text-fg-muted" : "bg-group-2-soft text-group-2"
-                }`}
-              >
-                {session.finishedAt ? "Finalizada" : "En curso"}
-              </span>
               <IconButton
                 aria-label="Borrar sesión"
                 className="size-8 text-danger hover:bg-danger-soft"

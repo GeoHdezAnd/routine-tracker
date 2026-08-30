@@ -1,16 +1,19 @@
 import { Router } from "express";
 import * as z from "zod";
+import { ROUTINE_COLORS } from "@routine-tracker/shared";
 import { requireAuth } from "../middleware/require-auth.js";
 import { ExerciseNotFoundError } from "../services/exercise.service.js";
 import {
   RoutineExerciseNotFoundError,
   RoutineNotFoundError,
   addExerciseToRoutine,
+  addRoutineToPlan,
   createRoutine,
   deleteRoutine,
   getRoutineById,
   listRoutinesForUser,
   removeExerciseFromRoutine,
+  removeRoutineFromPlan,
   suggestRepRange,
   updateRoutine,
   updateRoutineExercise,
@@ -25,6 +28,7 @@ const dayOfWeekEnum = z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]);
 
 const routineSchema = z.object({
   name: z.string().min(1),
+  color: z.enum(ROUTINE_COLORS).optional(),
   muscleGroups: z.array(z.string().min(1)).optional(),
   trainingDays: z.array(dayOfWeekEnum).optional(),
 });
@@ -129,6 +133,32 @@ routinesRouter.patch("/:id", async (req, res) => {
 routinesRouter.delete("/:id", async (req, res) => {
   try {
     await deleteRoutine(res.locals.userId, req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    if (error instanceof RoutineNotFoundError) {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
+});
+
+routinesRouter.post("/:id/plan", async (req, res) => {
+  try {
+    const period = await addRoutineToPlan(res.locals.userId, req.params.id);
+    res.status(200).json(period);
+  } catch (error) {
+    if (error instanceof RoutineNotFoundError) {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
+});
+
+routinesRouter.delete("/:id/plan", async (req, res) => {
+  try {
+    await removeRoutineFromPlan(res.locals.userId, req.params.id);
     res.status(204).send();
   } catch (error) {
     if (error instanceof RoutineNotFoundError) {

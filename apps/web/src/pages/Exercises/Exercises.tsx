@@ -3,12 +3,12 @@ import type { FormEvent } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MovementType } from "@routine-tracker/shared";
-import { ChevronRight, Dumbbell, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { ChevronRight, Dumbbell, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
 import { kgToDisplay, unitLabel } from "../../lib/units";
-import { Button, Card, FieldLabel, IconButton, Input, Pill, Select } from "../../components/ui";
+import { Button, Card, FieldLabel, IconButton, Input, Menu, Pill, Select } from "../../components/ui";
 
 type Exercise = {
   id: string;
@@ -180,7 +180,7 @@ export function ExercisesPage() {
       >
         <summary className="cursor-pointer text-sm font-medium text-fg-muted">Filtros avanzados</summary>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Select value={equipmentType} onChange={(event) => setEquipmentType(event.target.value)}>
+          <Select value={equipmentType} onChange={setEquipmentType}>
             <option value="">Equipo</option>
             {equipmentTypes.map((type) => (
               <option key={type} value={type}>
@@ -188,7 +188,7 @@ export function ExercisesPage() {
               </option>
             ))}
           </Select>
-          <Select value={movementType} onChange={(event) => setMovementType(event.target.value as MovementType | "")}>
+          <Select value={movementType} onChange={(value) => setMovementType(value as MovementType | "")}>
             <option value="">Movimiento</option>
             <option value="COMPOUND">Compuesto</option>
             <option value="ISOLATION">Aislamiento</option>
@@ -216,7 +216,7 @@ export function ExercisesPage() {
             </div>
             <FieldLabel>
               Tipo de movimiento
-              <Select value={newMovementType} onChange={(event) => setNewMovementType(event.target.value as MovementType)}>
+              <Select value={newMovementType} onChange={(value) => setNewMovementType(value as MovementType)}>
                 <option value="COMPOUND">Compuesto</option>
                 <option value="ISOLATION">Aislamiento</option>
               </Select>
@@ -226,7 +226,7 @@ export function ExercisesPage() {
                 {formError}
               </p>
             )}
-            <Button type="submit" disabled={createExercise.isPending}>
+            <Button type="submit" loading={createExercise.isPending}>
               Crear ejercicio
             </Button>
           </form>
@@ -266,52 +266,61 @@ export function ExercisesPage() {
                           }}
                         >
                           <Input value={editName} onChange={(event) => setEditName(event.target.value)} />
-                          <Button type="submit" className="shrink-0 px-3 py-1 text-sm">
+                          <Button type="submit" className="shrink-0 px-3 py-1 text-sm" loading={updateExercise.isPending}>
                             Guardar
                           </Button>
                         </form>
                       ) : (
-                        <Link to={`/exercises/${exercise.id}/progress`} className="min-w-0 flex-1">
-                          <p className="truncate font-semibold">{exercise.name}</p>
-                          <p className="truncate text-sm text-fg-muted">
-                            {exercise.equipmentType} · {MOVEMENT_LABELS[exercise.movementType]}
-                          </p>
+                        <Link
+                          to={`/exercises/${exercise.id}/progress`}
+                          className="flex min-w-0 flex-1 items-center gap-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-semibold">{exercise.name}</p>
+                            <p className="truncate text-sm text-fg-muted">
+                              {exercise.equipmentType} · {MOVEMENT_LABELS[exercise.movementType]}
+                            </p>
+                          </div>
+                          {exercise.personalRecord && (
+                            <span className="shrink-0 text-sm font-semibold text-pr">
+                              {kgToDisplay(exercise.personalRecord.weightKg, unit)}
+                              {unitLabel(unit)} PR
+                            </span>
+                          )}
+                          {!isOwn && (
+                            <>
+                              <span className="shrink-0 text-xs text-fg-subtle">Global</span>
+                              <ChevronRight className="size-4 shrink-0 text-fg-subtle" />
+                            </>
+                          )}
                         </Link>
                       )}
 
-                      {!isEditing && exercise.personalRecord && (
-                        <span className="shrink-0 text-sm font-semibold text-pr">
-                          {kgToDisplay(exercise.personalRecord.weightKg, unit)}
-                          {unitLabel(unit)} PR
-                        </span>
-                      )}
-
                       {!isEditing && isOwn && (
-                        <div className="flex shrink-0 gap-1">
-                          <IconButton
-                            aria-label="Editar ejercicio"
-                            className="size-8"
-                            onClick={() => {
-                              setEditingId(exercise.id);
-                              setEditName(exercise.name);
-                            }}
-                          >
-                            <Pencil className="size-4" />
-                          </IconButton>
-                          <IconButton
-                            aria-label="Borrar ejercicio"
-                            className="size-8 text-danger hover:bg-danger-soft"
-                            onClick={() => deleteExercise.mutate(exercise.id)}
-                          >
-                            <Trash2 className="size-4" />
-                          </IconButton>
-                        </div>
-                      )}
-                      {!isEditing && !isOwn && (
-                        <>
-                          <span className="shrink-0 text-xs text-fg-subtle">Global</span>
-                          <ChevronRight className="size-4 shrink-0 text-fg-subtle" />
-                        </>
+                        <Menu
+                          items={[
+                            {
+                              label: "Editar",
+                              icon: <Pencil className="size-4" />,
+                              onClick: () => {
+                                setEditingId(exercise.id);
+                                setEditName(exercise.name);
+                              },
+                            },
+                            {
+                              label: "Borrar",
+                              icon:
+                                deleteExercise.isPending && deleteExercise.variables === exercise.id ? (
+                                  <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="size-4" />
+                                ),
+                              variant: "danger",
+                              disabled: deleteExercise.isPending,
+                              onClick: () => deleteExercise.mutate(exercise.id),
+                            },
+                          ]}
+                        />
                       )}
                     </div>
                   );
