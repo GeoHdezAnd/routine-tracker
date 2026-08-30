@@ -210,11 +210,13 @@ export function CreateRoutineModal({ onClose, onCreated }: { onClose: () => void
                       >
                         {checked && <Check className="size-3 text-accent-fg" strokeWidth={3} />}
                       </span>
-                      <span className="min-w-0 flex-1 truncate font-medium">{exercise.name}</span>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${muscleColor.soft} ${muscleColor.fg}`}
-                      >
-                        {exercise.muscleGroup}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{exercise.name}</span>
+                        <span
+                          className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${muscleColor.soft} ${muscleColor.fg}`}
+                        >
+                          {exercise.muscleGroup}
+                        </span>
                       </span>
                     </button>
                   );
