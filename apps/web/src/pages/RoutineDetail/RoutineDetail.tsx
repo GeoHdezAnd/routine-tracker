@@ -1,9 +1,31 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MovementType, TrainingGoal } from "@routine-tracker/shared";
-import { ChevronLeft, Dumbbell, Loader2, Pencil, Plus, Trash2, Wand2, X, Zap } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DraggableAttributes, DraggableSyntheticListeners, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  ChevronLeft,
+  Dumbbell,
+  GripVertical,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  Wand2,
+  X,
+  Zap,
+} from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel, colorForRoutine } from "../../lib/colors";
@@ -56,8 +78,6 @@ export function RoutineDetailPage() {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [exerciseId, setExerciseId] = useState("");
-  const [order, setOrder] = useState(1);
-  const [supersetSlot, setSupersetSlot] = useState("");
   const [goal, setGoal] = useState<TrainingGoal>("HYPERTROPHY");
   const [targetSets, setTargetSets] = useState(3);
   const [targetRepMin, setTargetRepMin] = useState("");
@@ -153,8 +173,7 @@ export function RoutineDetailPage() {
         token,
         body: {
           exerciseId,
-          order,
-          supersetSlot: supersetSlot ? Number(supersetSlot) : undefined,
+          order: (routine?.exercises.length ?? 0) + 1,
           goal,
           targetSets,
           targetRepMin: targetRepMin ? Number(targetRepMin) : undefined,
@@ -165,7 +184,6 @@ export function RoutineDetailPage() {
       invalidateRoutine();
       setShowAddForm(false);
       setExerciseId("");
-      setSupersetSlot("");
       setTargetRepMin("");
       setTargetRepMax("");
     },
@@ -175,6 +193,42 @@ export function RoutineDetailPage() {
       );
     },
   });
+
+  const reorderExercises = useMutation({
+    mutationFn: (reordered: RoutineExercise[]) =>
+      Promise.all(
+        reordered
+          .map((routineExercise, index) => ({ routineExercise, order: index + 1 }))
+          .filter(({ routineExercise, order }) => routineExercise.order !== order)
+          .map(({ routineExercise, order }) =>
+            apiFetch(`/routines/${id}/exercises/${routineExercise.id}`, {
+              method: "PATCH",
+              token,
+              body: { order },
+            }),
+          ),
+      ),
+    onSuccess: () => invalidateRoutine(),
+    onError: () => invalidateRoutine(),
+  });
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!routine || !over || active.id === over.id) return;
+
+    const oldIndex = routine.exercises.findIndex((routineExercise) => routineExercise.id === active.id);
+    const newIndex = routine.exercises.findIndex((routineExercise) => routineExercise.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(routine.exercises, oldIndex, newIndex);
+    queryClient.setQueryData<RoutineDetail>(["routine", id, token], { ...routine, exercises: reordered });
+    reorderExercises.mutate(reordered);
+  }
+
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+  );
 
   const removeExercise = useMutation({
     mutationFn: (routineExerciseId: string) =>
@@ -568,27 +622,6 @@ export function RoutineDetailPage() {
                     Ver todos los ejercicios (no solo {routine.muscleGroups.join(", ")})
                   </label>
                 )}
-                <div className="grid grid-cols-2 gap-2">
-                  <FieldLabel>
-                    Orden
-                    <Input
-                      type="number"
-                      min={1}
-                      value={order}
-                      onChange={(event) => setOrder(Number(event.target.value))}
-                    />
-                  </FieldLabel>
-                  <FieldLabel>
-                    Superserie (opcional)
-                    <Input
-                      type="number"
-                      min={1}
-                      placeholder="1, 2..."
-                      value={supersetSlot}
-                      onChange={(event) => setSupersetSlot(event.target.value)}
-                    />
-                  </FieldLabel>
-                </div>
                 <FieldLabel>
                   Objetivo
                   <Select value={goal} onChange={(value) => setGoal(value as TrainingGoal)}>
@@ -660,139 +693,199 @@ export function RoutineDetailPage() {
               Esta rutina todavía no tiene ejercicios. Agrega al menos uno para poder iniciar una sesión.
             </p>
           ) : (
-            <Card className="divide-y divide-border overflow-hidden p-0">
-              {routine.exercises.map((routineExercise) => {
-                const color = colorForLabel(routineExercise.exercise.muscleGroup);
-                return editingId === routineExercise.id ? (
-                  <div key={routineExercise.id} className="flex flex-col gap-2 bg-surface-muted px-4 py-3">
-                    <form
-                      className="flex flex-col gap-2"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        updateExercise.mutate(routineExercise.id);
-                      }}
-                    >
-                      <p className="truncate text-sm font-semibold">Editando: {routineExercise.exercise.name}</p>
-                      <FieldLabel>
-                        Objetivo
-                        <Select
-                          value={editGoal}
-                          onChange={(value) => setEditGoal(value as TrainingGoal)}
-                        >
-                          <option value="STRENGTH">Fuerza</option>
-                          <option value="HYPERTROPHY">Hipertrofia</option>
-                          <option value="ENDURANCE">Resistencia</option>
-                        </Select>
-                      </FieldLabel>
-                      <FieldLabel>
-                        Series
-                        <Input
-                          type="number"
-                          min={1}
-                          value={editTargetSets}
-                          onChange={(event) => setEditTargetSets(Number(event.target.value))}
-                        />
-                      </FieldLabel>
-                      <div className="grid grid-cols-2 gap-2">
-                        <FieldLabel>
-                          Reps min
-                          <Input
-                            type="number"
-                            value={editTargetRepMin}
-                            onChange={(event) => setEditTargetRepMin(event.target.value)}
-                          />
-                        </FieldLabel>
-                        <FieldLabel>
-                          Reps max
-                          <Input
-                            type="number"
-                            value={editTargetRepMax}
-                            onChange={(event) => setEditTargetRepMax(event.target.value)}
-                          />
-                        </FieldLabel>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="flex items-center justify-center gap-2"
-                        onClick={() => editRepRangeSuggestion.mutate(routineExercise.exercise.movementType)}
-                        disabled={editRepRangeSuggestion.isPending}
+            <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext
+                items={routine.exercises.map((routineExercise) => routineExercise.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <Card className="divide-y divide-border overflow-hidden p-0">
+                  {routine.exercises.map((routineExercise) => {
+                    const color = colorForLabel(routineExercise.exercise.muscleGroup);
+                    return (
+                      <SortableExerciseRow
+                        key={routineExercise.id}
+                        id={routineExercise.id}
+                        disabled={editingId === routineExercise.id}
                       >
-                        {editRepRangeSuggestion.isPending ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Wand2 className="size-4" />
-                        )}
-                        Usar sugerencia
-                      </Button>
-                      {editError && (
-                        <p role="alert" className="text-sm text-danger">
-                          {editError}
-                        </p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button type="submit" className="px-3 py-1 text-sm" disabled={updateExercise.isPending} loading={updateExercise.isPending}>
-                          Guardar
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="px-3 py-1 text-sm"
-                          onClick={() => setEditingId(null)}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    </form>
-                  </div>
-                ) : (
-                  <div key={routineExercise.id} className="flex items-center gap-3 px-2 py-3">
-                    <span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">
-                        {routineExercise.supersetSlot !== null && (
-                          <span className="mr-1.5 rounded-full bg-accent/15 px-1.5 py-0.5 text-xs font-bold text-accent">
-                            A{routineExercise.supersetSlot}
-                          </span>
-                        )}
-                        {routineExercise.exercise.name}
-                      </p>
-                      <div className="flex items-center gap-1.5">
-                        <p className="min-w-0 flex-1 truncate text-xs text-fg-muted">
-                          {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
-                          {routineExercise.targetRepMax} reps · {GOAL_LABELS[routineExercise.goal]}
-                        </p>
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${color.soft} ${color.fg}`}
-                        >
-                          {routineExercise.exercise.muscleGroup}
-                        </span>
-                      </div>
-                    </div>
-                    <Menu
-                      items={[
-                        { label: "Editar", icon: <Pencil className="size-4" />, onClick: () => startEditing(routineExercise) },
-                        {
-                          label: "Quitar",
-                          icon:
-                            removeExercise.isPending && removeExercise.variables === routineExercise.id ? (
-                              <Loader2 className="size-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="size-4" />
-                            ),
-                          variant: "danger",
-                          disabled: removeExercise.isPending,
-                          onClick: () => removeExercise.mutate(routineExercise.id),
-                        },
-                      ]}
-                    />
-                  </div>
-                );
-              })}
-            </Card>
+                        {({ setActivatorNodeRef, attributes, listeners }) =>
+                          editingId === routineExercise.id ? (
+                            <div className="flex flex-col gap-2 bg-surface-muted px-4 py-3">
+                              <form
+                                className="flex flex-col gap-2"
+                                onSubmit={(event) => {
+                                  event.preventDefault();
+                                  updateExercise.mutate(routineExercise.id);
+                                }}
+                              >
+                                <p className="truncate text-sm font-semibold">
+                                  Editando: {routineExercise.exercise.name}
+                                </p>
+                                <FieldLabel>
+                                  Objetivo
+                                  <Select
+                                    value={editGoal}
+                                    onChange={(value) => setEditGoal(value as TrainingGoal)}
+                                  >
+                                    <option value="STRENGTH">Fuerza</option>
+                                    <option value="HYPERTROPHY">Hipertrofia</option>
+                                    <option value="ENDURANCE">Resistencia</option>
+                                  </Select>
+                                </FieldLabel>
+                                <FieldLabel>
+                                  Series
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={editTargetSets}
+                                    onChange={(event) => setEditTargetSets(Number(event.target.value))}
+                                  />
+                                </FieldLabel>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <FieldLabel>
+                                    Reps min
+                                    <Input
+                                      type="number"
+                                      value={editTargetRepMin}
+                                      onChange={(event) => setEditTargetRepMin(event.target.value)}
+                                    />
+                                  </FieldLabel>
+                                  <FieldLabel>
+                                    Reps max
+                                    <Input
+                                      type="number"
+                                      value={editTargetRepMax}
+                                      onChange={(event) => setEditTargetRepMax(event.target.value)}
+                                    />
+                                  </FieldLabel>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className="flex items-center justify-center gap-2"
+                                  onClick={() => editRepRangeSuggestion.mutate(routineExercise.exercise.movementType)}
+                                  disabled={editRepRangeSuggestion.isPending}
+                                >
+                                  {editRepRangeSuggestion.isPending ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                  ) : (
+                                    <Wand2 className="size-4" />
+                                  )}
+                                  Usar sugerencia
+                                </Button>
+                                {editError && (
+                                  <p role="alert" className="text-sm text-danger">
+                                    {editError}
+                                  </p>
+                                )}
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="submit"
+                                    className="px-3 py-1 text-sm"
+                                    disabled={updateExercise.isPending}
+                                    loading={updateExercise.isPending}
+                                  >
+                                    Guardar
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    className="px-3 py-1 text-sm"
+                                    onClick={() => setEditingId(null)}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              </form>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 px-2 py-3">
+                              <button
+                                type="button"
+                                ref={setActivatorNodeRef}
+                                {...attributes}
+                                {...listeners}
+                                aria-label="Reordenar ejercicio"
+                                className="flex size-8 shrink-0 touch-none items-center justify-center text-fg-subtle active:cursor-grabbing"
+                              >
+                                <GripVertical className="size-4" />
+                              </button>
+                              <span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-semibold">{routineExercise.exercise.name}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="min-w-0 flex-1 truncate text-xs text-fg-muted">
+                                    {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
+                                    {routineExercise.targetRepMax} reps · {GOAL_LABELS[routineExercise.goal]}
+                                  </p>
+                                  <span
+                                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${color.soft} ${color.fg}`}
+                                  >
+                                    {routineExercise.exercise.muscleGroup}
+                                  </span>
+                                </div>
+                              </div>
+                              <Menu
+                                items={[
+                                  {
+                                    label: "Editar",
+                                    icon: <Pencil className="size-4" />,
+                                    onClick: () => startEditing(routineExercise),
+                                  },
+                                  {
+                                    label: "Quitar",
+                                    icon:
+                                      removeExercise.isPending && removeExercise.variables === routineExercise.id ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="size-4" />
+                                      ),
+                                    variant: "danger",
+                                    disabled: removeExercise.isPending,
+                                    onClick: () => removeExercise.mutate(routineExercise.id),
+                                  },
+                                ]}
+                              />
+                            </div>
+                          )
+                        }
+                      </SortableExerciseRow>
+                    );
+                  })}
+                </Card>
+              </SortableContext>
+            </DndContext>
           )}
         </>
       )}
     </main>
+  );
+}
+
+type SortableRowChildren = (props: {
+  setActivatorNodeRef: (node: HTMLElement | null) => void;
+  attributes: DraggableAttributes;
+  listeners: DraggableSyntheticListeners;
+}) => ReactNode;
+
+function SortableExerciseRow({
+  id,
+  disabled,
+  children,
+}: {
+  id: string;
+  disabled?: boolean;
+  children: SortableRowChildren;
+}) {
+  const { setNodeRef, setActivatorNodeRef, attributes, listeners, transform, transition, isDragging } =
+    useSortable({ id, disabled });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={isDragging ? "relative z-10 bg-surface shadow-md" : "relative"}
+    >
+      {children({ setActivatorNodeRef, attributes, listeners })}
+    </div>
   );
 }
