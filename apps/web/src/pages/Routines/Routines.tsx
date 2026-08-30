@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, ArchiveRestore, Dumbbell, Plus, X } from "lucide-react";
+import { Archive, ArchiveRestore, Dumbbell, Plus, Trash2, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch } from "../../lib/api";
 import { colorForRoutine } from "../../lib/colors";
-import { Card, IconButton, Pill } from "../../components/ui";
+import { Card, IconButton, Menu, Pill } from "../../components/ui";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { CreateRoutineModal } from "./CreateRoutineModal";
 
 type Routine = {
@@ -22,6 +23,7 @@ export function RoutinesPage() {
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [routineToDelete, setRoutineToDelete] = useState<string | null>(null);
 
   const { data: routines, isLoading } = useQuery({
     queryKey: ["routines", token, showArchived],
@@ -36,6 +38,14 @@ export function RoutinesPage() {
     mutationFn: ({ id, archived }: { id: string; archived: boolean }) =>
       apiFetch<Routine>(`/routines/${id}`, { method: "PATCH", token, body: { archived } }),
     onSuccess: () => invalidateRoutines(),
+  });
+
+  const deleteRoutine = useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/routines/${id}`, { method: "DELETE", token }),
+    onSuccess: () => {
+      invalidateRoutines();
+      setRoutineToDelete(null);
+    },
   });
 
   return (
@@ -97,13 +107,22 @@ export function RoutinesPage() {
                   </p>
                 </Link>
                 {showArchived ? (
-                  <IconButton
-                    aria-label="Restaurar rutina"
-                    disabled={setArchived.isPending}
-                    onClick={() => setArchived.mutate({ id: routine.id, archived: false })}
-                  >
-                    <ArchiveRestore className="size-5" />
-                  </IconButton>
+                  <Menu
+                    items={[
+                      {
+                        label: "Restaurar",
+                        icon: <ArchiveRestore className="size-4" />,
+                        disabled: setArchived.isPending,
+                        onClick: () => setArchived.mutate({ id: routine.id, archived: false }),
+                      },
+                      {
+                        label: "Eliminar",
+                        icon: <Trash2 className="size-4" />,
+                        variant: "danger",
+                        onClick: () => setRoutineToDelete(routine.id),
+                      },
+                    ]}
+                  />
                 ) : (
                   <IconButton
                     aria-label="Archivar rutina"
@@ -118,6 +137,18 @@ export function RoutinesPage() {
           })}
         </Card>
       )}
+
+      <ConfirmDialog
+        open={routineToDelete !== null}
+        title="Eliminar rutina"
+        message="Se va a borrar la rutina para siempre. Las sesiones que la usaron se conservan, pero quedan sin rutina asociada. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        isPending={deleteRoutine.isPending}
+        onConfirm={() => {
+          if (routineToDelete) deleteRoutine.mutate(routineToDelete);
+        }}
+        onCancel={() => setRoutineToDelete(null)}
+      />
     </main>
   );
 }
