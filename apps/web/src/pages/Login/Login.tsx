@@ -51,6 +51,9 @@ export function LoginPage() {
         <Button type="submit" loading={isSubmitting} className="py-3">
           Ingresar
         </Button>
+        <p className="text-center text-xs text-fg-muted">
+          Si ves un error o la app no responde, recargá la página y volvé a intentar: el servidor puede tardar unos segundos en despertar.
+        </p>
       </form>
     </main>
   );

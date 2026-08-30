@@ -28,13 +28,51 @@ function extractErrorMessage(error: unknown): string {
   return "Ocurrió un error inesperado";
 }
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+const REQUEST_TIMEOUT_MS = 15000;
+const RETRYABLE_STATUSES = new Set([502, 503, 504]);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, init);
+      if (RETRYABLE_STATUSES.has(response.status) && attempt < MAX_RETRIES) {
+        await sleep(RETRY_DELAY_MS * (attempt + 1));
+        continue;
+      }
+      return response;
+    } catch (error) {
+      if (attempt < MAX_RETRIES) {
+        await sleep(RETRY_DELAY_MS * (attempt + 1));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (options.token) {
     headers.Authorization = `Bearer ${options.token}`;
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetchWithRetry(`${API_URL}${path}`, {
     method: options.method ?? "GET",
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
