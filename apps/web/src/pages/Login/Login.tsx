@@ -19,7 +19,7 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(email, password);
-      navigate("/routines");
+      navigate("/");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Ocurrió un error inesperado");
     } finally {
