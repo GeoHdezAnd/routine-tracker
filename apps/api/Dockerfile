@@ -33,6 +33,13 @@ COPY packages/shared ./packages/shared
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5433/placeholder"
 RUN pnpm --filter @routine-tracker/api prisma:generate
 RUN pnpm --filter @routine-tracker/api build
+# packages/shared/package.json apunta a src/index.ts a propósito, para que
+# tsx (dev) y Vite lo transpilen al vuelo sin build ni hot-reload roto. El
+# runtime de producción es "node dist/index.js" puro, sin transpiler, así
+# que acá (y SOLO acá, en la imagen) lo compilamos a JS y reapuntamos
+# main/types al output — el package.json del repo/dev queda intacto.
+RUN pnpm --filter @routine-tracker/shared build
+RUN cd packages/shared && npm pkg set main=dist/index.js types=dist/index.d.ts
 
 # --- runtime: arranca de nuevo desde "base", no desde "build" — sin TypeScript,
 # sin devDependencies, sin los .ts fuente, solo el output compilado ---
@@ -43,6 +50,7 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages/shared ./packages/shared
 WORKDIR /app/apps/api
 COPY apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh

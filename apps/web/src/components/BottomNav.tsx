@@ -7,7 +7,7 @@ const LINKS: { to: string; label: string; end: boolean; icon: LucideIcon }[] = [
   { to: "/", label: "Inicio", end: true, icon: House },
   { to: "/routines", label: "Rutinas", end: false, icon: CalendarRange },
   { to: "/exercises", label: "Ejercicios", end: false, icon: Dumbbell },
-  { to: "/sessions", label: "Sesiones", end: false, icon: ListChecks },
+  { to: "/sessions", label: "Historial", end: false, icon: ListChecks },
   { to: "/settings", label: "Ajustes", end: false, icon: Settings },
 ];
 
