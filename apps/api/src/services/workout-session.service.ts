@@ -49,12 +49,16 @@ export async function listSessionsForUser(userId: string) {
   const sessions = await prisma.workoutSession.findMany({
     where: { userId },
     orderBy: { startedAt: "desc" },
-    include: { routine: { select: { name: true } } },
+    include: {
+      routine: { select: { name: true } },
+      setLogs: { select: { weightKg: true, reps: true } },
+    },
   });
 
-  return sessions.map(({ routine, ...session }) => ({
+  return sessions.map(({ routine, setLogs, ...session }) => ({
     ...session,
     routineName: routine?.name ?? null,
+    volumeKg: Math.round(setLogs.reduce((sum, log) => sum + log.weightKg * log.reps, 0)),
   }));
 }
 
