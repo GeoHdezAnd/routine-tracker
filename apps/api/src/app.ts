@@ -48,7 +48,9 @@ export function createApp() {
     res.json({ status: "ok" });
   });
 
-  app.use("/auth", authLimiter, authRouter);
+  app.use("/auth/login", authLimiter);
+  app.use("/auth/register", authLimiter);
+  app.use("/auth", createResourceLimiter(), authRouter);
   app.use("/exercises", createResourceLimiter(), exercisesRouter);
   app.use("/routines", createResourceLimiter(), routinesRouter);
   app.use("/sessions", createResourceLimiter(), sessionsRouter);

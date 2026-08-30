@@ -29,6 +29,7 @@ model User {
   name           String?
   birthDate      DateTime?
   unitPreference UnitPreference @default(KG)
+  bodyWeightKg   Float?
   createdAt      DateTime       @default(now())
 
   routines        Routine[]
@@ -55,13 +56,25 @@ model Routine {
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name          String
+  color         String?
   muscleGroups  String[] @default([])
   trainingDays  String[] @default([])
   archived      Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  exercises RoutineExercise[]
-  sessions  WorkoutSession[]
+  exercises   RoutineExercise[]
+  sessions    WorkoutSession[]
+  planPeriods RoutinePlanPeriod[]
+}
+
+model RoutinePlanPeriod {
+  id        String    @id @default(cuid())
+  routineId String
+  routine   Routine   @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  @@index([routineId])
 }
 
 model RoutineExercise {

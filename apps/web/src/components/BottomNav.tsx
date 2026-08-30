@@ -30,9 +30,9 @@ export function BottomNav() {
         />
       )}
 
-      <div className="fixed right-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-end gap-3">
+      <div className="bottom-nav-fab fixed right-4 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-50">
         <ul
-          className={`flex flex-col items-end gap-2 transition-all duration-200 ${
+          className={`absolute right-0 bottom-full mb-3 flex flex-col items-end gap-2 transition-all duration-200 ${
             open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
           }`}
         >

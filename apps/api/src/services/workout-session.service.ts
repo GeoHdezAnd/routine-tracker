@@ -46,10 +46,16 @@ export async function createSession(userId: string, input: CreateSessionInput) {
 }
 
 export async function listSessionsForUser(userId: string) {
-  return prisma.workoutSession.findMany({
+  const sessions = await prisma.workoutSession.findMany({
     where: { userId },
     orderBy: { startedAt: "desc" },
+    include: { routine: { select: { name: true } } },
   });
+
+  return sessions.map(({ routine, ...session }) => ({
+    ...session,
+    routineName: routine?.name ?? null,
+  }));
 }
 
 async function findOwnedSession(userId: string, id: string) {

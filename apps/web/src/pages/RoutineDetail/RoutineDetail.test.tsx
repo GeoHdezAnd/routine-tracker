@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { renderWithProviders } from "../../test/render-with-providers";
 
 type RoutineExercise = {
@@ -127,7 +127,8 @@ describe("RoutineDetailPage", () => {
 
     await screen.findByText("Press banca");
 
-    fireEvent.click(screen.getByRole("button", { name: "Editar ejercicio" }));
+    fireEvent.click(screen.getByRole("button", { name: "Más opciones" }));
+    fireEvent.click(within(screen.getByRole("menu")).getByText("Editar"));
 
     const useSuggestionButton = await screen.findByRole("button", { name: "Usar sugerencia" });
     fireEvent.click(useSuggestionButton);

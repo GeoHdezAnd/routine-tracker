@@ -48,8 +48,8 @@ export function LoginPage() {
             {error}
           </p>
         )}
-        <Button type="submit" disabled={isSubmitting} className="py-3">
-          {isSubmitting ? "Ingresando..." : "Ingresar"}
+        <Button type="submit" loading={isSubmitting} className="py-3">
+          Ingresar
         </Button>
       </form>
     </main>

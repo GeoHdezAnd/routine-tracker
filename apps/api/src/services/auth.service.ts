@@ -95,21 +95,30 @@ export async function getUserById(id: string) {
       name: true,
       birthDate: true,
       unitPreference: true,
+      bodyWeightKg: true,
       createdAt: true,
     },
   });
 }
 
-export async function updateUserUnitPreference(id: string, unitPreference: UnitPreference) {
+type UpdateUserInput = {
+  name?: string;
+  birthDate?: Date;
+  unitPreference?: UnitPreference;
+  bodyWeightKg?: number;
+};
+
+export async function updateUser(id: string, data: UpdateUserInput) {
   return prisma.user.update({
     where: { id },
-    data: { unitPreference },
+    data,
     select: {
       id: true,
       email: true,
       name: true,
       birthDate: true,
       unitPreference: true,
+      bodyWeightKg: true,
       createdAt: true,
     },
   });

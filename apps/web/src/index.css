@@ -27,6 +27,10 @@
   --color-group-5-soft: #e8f7fe;
   --color-group-6: #facc15;
   --color-group-6-soft: #fffceb;
+  --color-group-7: #34d399;
+  --color-group-7-soft: #e8fbf3;
+  --color-group-8: #ec4899;
+  --color-group-8-soft: #fdeff6;
 }
 
 .dark {
@@ -55,6 +59,10 @@
   --color-group-5-soft: rgba(56, 189, 248, 0.14);
   --color-group-6: #facc15;
   --color-group-6-soft: rgba(250, 204, 21, 0.14);
+  --color-group-7: #34d399;
+  --color-group-7-soft: rgba(52, 211, 153, 0.14);
+  --color-group-8: #ec4899;
+  --color-group-8-soft: rgba(236, 72, 153, 0.14);
 }
 
 @theme inline {
@@ -83,9 +91,38 @@
   --color-group-5-soft: var(--color-group-5-soft);
   --color-group-6: var(--color-group-6);
   --color-group-6-soft: var(--color-group-6-soft);
+  --color-group-7: var(--color-group-7);
+  --color-group-7-soft: var(--color-group-7-soft);
+  --color-group-8: var(--color-group-8);
+  --color-group-8-soft: var(--color-group-8-soft);
 }
 
 body {
   background-color: var(--color-canvas);
   color-scheme: light dark;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-sheet-in {
+  animation: sheet-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.modal-open .bottom-nav-fab {
+  display: none;
 }
