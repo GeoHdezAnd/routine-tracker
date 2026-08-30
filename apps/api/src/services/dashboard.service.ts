@@ -51,7 +51,13 @@ export async function getDashboard(userId: string, tzOffsetMinutes = 0) {
     prisma.routine.findMany({
       where: { userId, archived: false },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, trainingDays: true, exercises: { select: { id: true } } },
+      select: {
+        id: true,
+        name: true,
+        trainingDays: true,
+        muscleGroups: true,
+        exercises: { select: { id: true } },
+      },
     }),
     getReadyToProgressForUser(userId),
     prisma.workoutSession.findMany({
@@ -90,7 +96,13 @@ export async function getDashboard(userId: string, tzOffsetMinutes = 0) {
         }
       : null,
     recentSessions,
-    routines: routinesRaw.map(({ id, name }) => ({ id, name })),
+    routines: routinesRaw.map(({ id, name, trainingDays, muscleGroups, exercises }) => ({
+      id,
+      name,
+      trainingDays,
+      muscleGroups,
+      exerciseCount: exercises.length,
+    })),
     readyToProgress,
   };
 }

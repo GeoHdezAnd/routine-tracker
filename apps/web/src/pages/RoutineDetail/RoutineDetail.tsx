@@ -3,11 +3,12 @@ import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MovementType, TrainingGoal } from "@routine-tracker/shared";
-import { ChevronLeft, Dumbbell, Pencil, Plus, Trash2, Wand2, X, Zap } from "lucide-react";
+import { ChevronLeft, Dumbbell, Loader2, Pencil, Plus, Trash2, Wand2, X, Zap } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
-import { colorForLabel } from "../../lib/colors";
-import { Button, Card, FieldLabel, IconButton, Input, Pill, Select } from "../../components/ui";
+import { colorForLabel, colorForRoutine } from "../../lib/colors";
+import { DAY_ORDER, DAY_LABELS, sortDays } from "../../lib/days";
+import { Button, Card, FieldLabel, IconButton, Input, Menu, Pill, Select } from "../../components/ui";
 
 type Exercise = {
   id: string;
@@ -32,6 +33,7 @@ type RoutineExercise = {
 type RoutineDetail = {
   id: string;
   name: string;
+  color: string | null;
   muscleGroups: string[];
   trainingDays: string[];
   exercises: RoutineExercise[];
@@ -44,21 +46,6 @@ const GOAL_LABELS: Record<TrainingGoal, string> = {
   HYPERTROPHY: "Hipertrofia",
   ENDURANCE: "Resistencia",
 };
-
-const DAY_ORDER = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
-const DAY_LABELS: Record<(typeof DAY_ORDER)[number], string> = {
-  MON: "Lun",
-  TUE: "Mar",
-  WED: "Mié",
-  THU: "Jue",
-  FRI: "Vie",
-  SAT: "Sáb",
-  SUN: "Dom",
-};
-
-function sortDays(days: string[]): string[] {
-  return [...days].sort((a, b) => DAY_ORDER.indexOf(a as never) - DAY_ORDER.indexOf(b as never));
-}
 
 export function RoutineDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -334,10 +321,10 @@ export function RoutineDetailPage() {
     addExercise.mutate();
   }
 
-  const heroColor = routine ? colorForLabel(routine.name) : null;
+  const heroColor = routine ? colorForRoutine(routine) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-4 pb-24 text-fg">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-3 bg-canvas px-4 pt-4 pb-24 text-fg">
       <Link to="/routines" className="flex items-center gap-0.5 text-sm font-medium text-accent">
         <ChevronLeft className="size-4" />
         Rutinas
@@ -368,7 +355,7 @@ export function RoutineDetailPage() {
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button type="submit" className="px-3 py-1 text-sm" disabled={updateName.isPending}>
+                    <Button type="submit" className="px-3 py-1 text-sm" disabled={updateName.isPending} loading={updateName.isPending}>
                       Guardar
                     </Button>
                     <Button
@@ -456,7 +443,7 @@ export function RoutineDetailPage() {
                   </p>
                 )}
                 <div className="flex gap-2">
-                  <Button type="submit" className="px-3 py-1 text-sm" disabled={updateMuscleGroups.isPending}>
+                  <Button type="submit" className="px-3 py-1 text-sm" disabled={updateMuscleGroups.isPending} loading={updateMuscleGroups.isPending}>
                     Guardar
                   </Button>
                   <Button
@@ -496,7 +483,7 @@ export function RoutineDetailPage() {
                   </p>
                 )}
                 <div className="flex gap-2">
-                  <Button type="submit" className="px-3 py-1 text-sm" disabled={updateTrainingDays.isPending}>
+                  <Button type="submit" className="px-3 py-1 text-sm" disabled={updateTrainingDays.isPending} loading={updateTrainingDays.isPending}>
                     Guardar
                   </Button>
                   <Button
@@ -518,7 +505,11 @@ export function RoutineDetailPage() {
             disabled={startSession.isPending || routine.exercises.length === 0}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-4 text-lg font-bold text-accent-fg transition-opacity disabled:opacity-50"
           >
-            <Zap className="size-5" fill="currentColor" />
+            {startSession.isPending ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <Zap className="size-5" fill="currentColor" />
+            )}
             Iniciar entrenamiento
           </button>
 
@@ -539,7 +530,7 @@ export function RoutineDetailPage() {
                 <p className="text-sm font-semibold">Agregar ejercicio</p>
                 <FieldLabel>
                   Ejercicio
-                  <Select value={exerciseId} onChange={(event) => setExerciseId(event.target.value)}>
+                  <Select value={exerciseId} onChange={setExerciseId}>
                     <option value="">Elige un ejercicio</option>
                     {exercisesData?.data.map((exercise) => (
                       <option key={exercise.id} value={exercise.id}>
@@ -581,7 +572,7 @@ export function RoutineDetailPage() {
                 </div>
                 <FieldLabel>
                   Objetivo
-                  <Select value={goal} onChange={(event) => setGoal(event.target.value as TrainingGoal)}>
+                  <Select value={goal} onChange={(value) => setGoal(value as TrainingGoal)}>
                     <option value="STRENGTH">Fuerza</option>
                     <option value="HYPERTROPHY">Hipertrofia</option>
                     <option value="ENDURANCE">Resistencia</option>
@@ -621,7 +612,11 @@ export function RoutineDetailPage() {
                   disabled={!selectedExercise || repRangeSuggestion.isPending}
                   className="flex items-center justify-center gap-2"
                 >
-                  <Wand2 className="size-4" />
+                  {repRangeSuggestion.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="size-4" />
+                  )}
                   Usar sugerencia
                 </Button>
                 {addError && (
@@ -630,7 +625,7 @@ export function RoutineDetailPage() {
                   </p>
                 )}
                 <div className="flex gap-2">
-                  <Button type="submit" disabled={addExercise.isPending}>
+                  <Button type="submit" disabled={addExercise.isPending} loading={addExercise.isPending}>
                     Agregar
                   </Button>
                   <Button type="button" variant="secondary" onClick={() => setShowAddForm(false)}>
@@ -663,7 +658,7 @@ export function RoutineDetailPage() {
                         Objetivo
                         <Select
                           value={editGoal}
-                          onChange={(event) => setEditGoal(event.target.value as TrainingGoal)}
+                          onChange={(value) => setEditGoal(value as TrainingGoal)}
                         >
                           <option value="STRENGTH">Fuerza</option>
                           <option value="HYPERTROPHY">Hipertrofia</option>
@@ -704,7 +699,11 @@ export function RoutineDetailPage() {
                         onClick={() => editRepRangeSuggestion.mutate(routineExercise.exercise.movementType)}
                         disabled={editRepRangeSuggestion.isPending}
                       >
-                        <Wand2 className="size-4" />
+                        {editRepRangeSuggestion.isPending ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Wand2 className="size-4" />
+                        )}
                         Usar sugerencia
                       </Button>
                       {editError && (
@@ -713,7 +712,7 @@ export function RoutineDetailPage() {
                         </p>
                       )}
                       <div className="flex gap-2">
-                        <Button type="submit" className="px-3 py-1 text-sm" disabled={updateExercise.isPending}>
+                        <Button type="submit" className="px-3 py-1 text-sm" disabled={updateExercise.isPending} loading={updateExercise.isPending}>
                           Guardar
                         </Button>
                         <Button
@@ -728,10 +727,10 @@ export function RoutineDetailPage() {
                     </form>
                   </div>
                 ) : (
-                  <div key={routineExercise.id} className="flex items-center gap-3 px-4 py-3">
+                  <div key={routineExercise.id} className="flex items-center gap-3 px-2 py-3">
                     <span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">
+                      <p className="truncate font-semibold">
                         {routineExercise.supersetSlot !== null && (
                           <span className="mr-1.5 rounded-full bg-accent/15 px-1.5 py-0.5 text-xs font-bold text-accent">
                             A{routineExercise.supersetSlot}
@@ -739,32 +738,35 @@ export function RoutineDetailPage() {
                         )}
                         {routineExercise.exercise.name}
                       </p>
-                      <p className="truncate text-xs text-fg-muted">
-                        {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
-                        {routineExercise.targetRepMax} reps · {GOAL_LABELS[routineExercise.goal]}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="min-w-0 flex-1 truncate text-xs text-fg-muted">
+                          {routineExercise.targetSets} series x {routineExercise.targetRepMin}-
+                          {routineExercise.targetRepMax} reps · {GOAL_LABELS[routineExercise.goal]}
+                        </p>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${color.soft} ${color.fg}`}
+                        >
+                          {routineExercise.exercise.muscleGroup}
+                        </span>
+                      </div>
                     </div>
-                    <span
-                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${color.soft} ${color.fg}`}
-                    >
-                      {routineExercise.exercise.muscleGroup}
-                    </span>
-                    <div className="flex shrink-0 gap-1">
-                      <IconButton
-                        aria-label="Editar ejercicio"
-                        className="size-8"
-                        onClick={() => startEditing(routineExercise)}
-                      >
-                        <Pencil className="size-4" />
-                      </IconButton>
-                      <IconButton
-                        aria-label="Quitar ejercicio"
-                        className="size-8 text-danger hover:bg-danger-soft"
-                        onClick={() => removeExercise.mutate(routineExercise.id)}
-                      >
-                        <Trash2 className="size-4" />
-                      </IconButton>
-                    </div>
+                    <Menu
+                      items={[
+                        { label: "Editar", icon: <Pencil className="size-4" />, onClick: () => startEditing(routineExercise) },
+                        {
+                          label: "Quitar",
+                          icon:
+                            removeExercise.isPending && removeExercise.variables === routineExercise.id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-4" />
+                            ),
+                          variant: "danger",
+                          disabled: removeExercise.isPending,
+                          onClick: () => removeExercise.mutate(routineExercise.id),
+                        },
+                      ]}
+                    />
                   </div>
                 );
               })}

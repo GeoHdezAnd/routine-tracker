@@ -10,6 +10,7 @@ function stubMe() {
     birthDate: null,
     age: null,
     unitPreference: "KG" as "KG" | "LB",
+    bodyWeightKg: null as number | null,
     createdAt: "2024-01-01",
   };
 
@@ -17,8 +18,8 @@ function stubMe() {
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
       if (url.endsWith("/auth/me") && init?.method === "PATCH") {
-        const body = JSON.parse(String(init.body)) as { unitPreference: "KG" | "LB" };
-        me = { ...me, unitPreference: body.unitPreference };
+        const body = JSON.parse(String(init.body)) as Partial<typeof me>;
+        me = { ...me, ...body };
         return new Response(JSON.stringify(me), { status: 200 });
       }
       if (url.endsWith("/auth/me")) {
@@ -45,8 +46,8 @@ describe("SettingsPage", () => {
 
     renderWithProviders(["/settings"]);
 
-    expect(await screen.findByText("Geo")).toBeInTheDocument();
-    expect(screen.getByText("geo@test.com")).toBeInTheDocument();
+    expect(await screen.findByText("geo@test.com")).toBeInTheDocument();
+    expect(screen.getAllByText("Geo").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByText("Claro"));
     expect(document.documentElement.classList.contains("dark")).toBe(false);
@@ -60,7 +61,7 @@ describe("SettingsPage", () => {
 
     renderWithProviders(["/settings"]);
 
-    expect(await screen.findByText("Geo")).toBeInTheDocument();
+    expect(await screen.findByText("geo@test.com")).toBeInTheDocument();
 
     const kgButton = screen.getByText("Kilogramos");
     const lbButton = screen.getByText("Libras");
@@ -74,12 +75,36 @@ describe("SettingsPage", () => {
     expect(screen.getByText("Kilogramos").className).not.toContain("bg-accent");
   });
 
+  it("guarda el peso corporal en la información personal", async () => {
+    stubMe();
+
+    renderWithProviders(["/settings"]);
+
+    expect(await screen.findByText("geo@test.com")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Editar información personal"));
+
+    const weightInput = screen.getByPlaceholderText("Peso en kg");
+    fireEvent.change(weightInput, { target: { value: "80" } });
+    fireEvent.click(screen.getByText("Guardar cambios"));
+
+    await vi.waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/auth/me"),
+        expect.objectContaining({
+          method: "PATCH",
+          body: expect.stringContaining('"bodyWeightKg":80'),
+        }),
+      );
+    });
+  });
+
   it("cierra sesión al hacer click en Cerrar sesión", async () => {
     stubMe();
 
     renderWithProviders(["/settings"]);
 
-    expect(await screen.findByText("Geo")).toBeInTheDocument();
+    expect(await screen.findByText("geo@test.com")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Cerrar sesión"));
 
     expect(await screen.findByText("Iniciar sesión")).toBeInTheDocument();

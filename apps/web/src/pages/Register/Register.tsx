@@ -73,8 +73,8 @@ export function RegisterPage() {
             {error}
           </p>
         )}
-        <Button type="submit" disabled={isSubmitting} className="py-3">
-          {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
+        <Button type="submit" loading={isSubmitting} className="py-3">
+          Crear cuenta
         </Button>
       </form>
       <p className="text-sm text-fg-muted">

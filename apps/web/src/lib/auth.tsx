@@ -12,6 +12,7 @@ export type CurrentUser = {
   birthDate: string | null;
   age: number | null;
   unitPreference: "KG" | "LB";
+  bodyWeightKg: number | null;
   createdAt: string;
 };
 

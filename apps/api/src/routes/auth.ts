@@ -8,7 +8,7 @@ import {
   getUserById,
   loginUser,
   registerUser,
-  updateUserUnitPreference,
+  updateUser,
 } from "../services/auth.service.js";
 
 export const authRouter = Router();
@@ -25,9 +25,14 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-const updateMeSchema = z.object({
-  unitPreference: z.enum(["KG", "LB"]),
-});
+const updateMeSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    birthDate: z.iso.date().optional(),
+    unitPreference: z.enum(["KG", "LB"]).optional(),
+    bodyWeightKg: z.number().positive().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, { message: "No hay datos para actualizar" });
 
 authRouter.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
@@ -64,7 +69,11 @@ authRouter.patch("/me", requireAuth, async (req, res) => {
     return;
   }
 
-  const user = await updateUserUnitPreference(res.locals.userId, parsed.data.unitPreference);
+  const { birthDate, ...rest } = parsed.data;
+  const user = await updateUser(res.locals.userId, {
+    ...rest,
+    birthDate: birthDate ? new Date(birthDate) : undefined,
+  });
   const age = user?.birthDate ? calculateAge(user.birthDate) : null;
   res.status(200).json({ ...user, age });
 });

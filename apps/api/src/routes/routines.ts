@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as z from "zod";
+import { ROUTINE_COLORS } from "@routine-tracker/shared";
 import { requireAuth } from "../middleware/require-auth.js";
 import { ExerciseNotFoundError } from "../services/exercise.service.js";
 import {
@@ -25,6 +26,7 @@ const dayOfWeekEnum = z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]);
 
 const routineSchema = z.object({
   name: z.string().min(1),
+  color: z.enum(ROUTINE_COLORS).optional(),
   muscleGroups: z.array(z.string().min(1)).optional(),
   trainingDays: z.array(dayOfWeekEnum).optional(),
 });

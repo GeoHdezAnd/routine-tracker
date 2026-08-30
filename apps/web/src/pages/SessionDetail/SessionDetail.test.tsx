@@ -120,7 +120,8 @@ describe("SessionDetailPage", () => {
 
     expect(await screen.findByText("Todavía no agregaste ejercicios a esta sesión.")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "ex1" } });
+    fireEvent.click(screen.getByText("Agregar ejercicio..."));
+    fireEvent.click(screen.getByText("Sentadilla"));
     fireEvent.click(screen.getByRole("button", { name: "Agregar" }));
 
     expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
@@ -153,7 +154,8 @@ describe("SessionDetailPage", () => {
 
     expect(await screen.findByText("Todavía no agregaste ejercicios a esta sesión.")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "ex1" } });
+    fireEvent.click(screen.getByText("Agregar ejercicio..."));
+    fireEvent.click(screen.getByText("Sentadilla"));
     fireEvent.click(screen.getByRole("button", { name: "Agregar" }));
 
     expect(await screen.findByText("Sentadilla")).toBeInTheDocument();
@@ -215,7 +217,8 @@ describe("SessionDetailPage", () => {
 
     expect(await screen.findByText("Todavía no agregaste ejercicios a esta sesión.")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "ex1" } });
+    fireEvent.click(screen.getByText("Agregar ejercicio..."));
+    fireEvent.click(screen.getByText("Sentadilla"));
     fireEvent.click(screen.getByRole("button", { name: "Agregar" }));
 
     expect(await screen.findByText("Sentadilla")).toBeInTheDocument();

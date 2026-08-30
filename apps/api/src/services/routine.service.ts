@@ -35,12 +35,13 @@ export class RoutineExerciseNotFoundError extends Error {
   }
 }
 
-type RoutineInput = { name: string; muscleGroups?: string[]; trainingDays?: string[] };
+type RoutineInput = { name: string; color?: string; muscleGroups?: string[]; trainingDays?: string[] };
 
 export async function createRoutine(userId: string, input: RoutineInput) {
   return prisma.routine.create({
     data: {
       name: input.name,
+      color: input.color,
       muscleGroups: input.muscleGroups ?? [],
       trainingDays: input.trainingDays ?? [],
       userId,
