@@ -4,6 +4,11 @@ import { renderWithProviders } from "../../test/render-with-providers";
 
 type Session = { id: string; routineId: string | null; startedAt: string; finishedAt: string | null };
 
+function thisMonthIso(day: number): string {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), day, 10, 0, 0).toISOString();
+}
+
 function stubApi(initialSessions: Session[]) {
   let sessions = initialSessions;
 
@@ -74,7 +79,7 @@ describe("SessionsPage", () => {
   });
 
   it("renderiza las sesiones devueltas por la API", async () => {
-    stubApi([{ id: "s1", routineId: null, startedAt: "2024-01-15T10:00:00.000Z", finishedAt: null }]);
+    stubApi([{ id: "s1", routineId: null, startedAt: thisMonthIso(15), finishedAt: null }]);
 
     renderWithProviders(["/sessions"]);
 
@@ -94,7 +99,7 @@ describe("SessionsPage", () => {
   });
 
   it("borra una sesión desde el diálogo de confirmación", async () => {
-    stubApi([{ id: "s1", routineId: null, startedAt: "2024-01-15T10:00:00.000Z", finishedAt: null }]);
+    stubApi([{ id: "s1", routineId: null, startedAt: thisMonthIso(15), finishedAt: null }]);
 
     renderWithProviders(["/sessions"]);
 

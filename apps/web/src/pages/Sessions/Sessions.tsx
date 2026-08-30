@@ -15,7 +15,6 @@ type Session = {
   routineName: string | null;
   startedAt: string;
   finishedAt: string | null;
-  volumeKg: number;
 };
 
 function dateKey(date: Date): string {
@@ -95,7 +94,6 @@ export function SessionsPage() {
     });
   }, [sessions, viewDate]);
 
-  const monthVolumeKg = monthSessions.reduce((sum, session) => sum + session.volumeKg, 0);
   const monthGrid = useMemo(() => buildMonthGrid(viewDate), [viewDate]);
   const monthLabel = viewDate.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
   const today = new Date();
@@ -109,14 +107,10 @@ export function SessionsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Card className="flex flex-col gap-1">
           <span className="text-2xl font-bold text-accent">{monthSessions.length}</span>
           <span className="text-xs text-fg-muted">Sesiones</span>
-        </Card>
-        <Card className="flex flex-col gap-1">
-          <span className="text-2xl font-bold text-group-3">{monthVolumeKg}</span>
-          <span className="text-xs text-fg-muted">Vol (kg)</span>
         </Card>
         <Card className="flex flex-col gap-1">
           <span className="text-2xl font-bold text-group-1">{dayStreak}</span>
@@ -173,7 +167,11 @@ export function SessionsPage() {
 
       {isLoading && <p className="text-fg-muted">Cargando...</p>}
 
-      {!isLoading && monthSessions.length === 0 && (
+      {!isLoading && sessions?.length === 0 && (
+        <p className="text-fg-muted">Todavía no registraste ninguna sesión.</p>
+      )}
+
+      {!isLoading && sessions && sessions.length > 0 && monthSessions.length === 0 && (
         <p className="text-fg-muted">No hay entrenos registrados en {monthLabel}.</p>
       )}
 
