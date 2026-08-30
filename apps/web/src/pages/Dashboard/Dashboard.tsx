@@ -70,7 +70,7 @@ export function DashboardPage() {
   const todayColor = data?.today ? colorForLabel(data.today.routineName) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-8 pb-24 text-fg">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-4 pb-24 text-fg">
       <div>
         <p className="text-sm text-fg-muted capitalize">
           {new Date().toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}

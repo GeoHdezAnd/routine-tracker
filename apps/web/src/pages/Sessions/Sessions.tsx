@@ -44,7 +44,7 @@ export function SessionsPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-8 pb-24 text-fg">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-4 pb-24 text-fg">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Sesiones</h1>
         <Button onClick={() => createSession.mutate()} disabled={createSession.isPending}>

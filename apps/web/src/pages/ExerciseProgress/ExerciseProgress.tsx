@@ -67,7 +67,7 @@ export function ExerciseProgressPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-8 pb-24 text-fg">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 bg-canvas px-4 pt-4 pb-24 text-fg">
       <Link to="/exercises" className="text-sm text-fg-muted underline">
         ← Volver a ejercicios
       </Link>

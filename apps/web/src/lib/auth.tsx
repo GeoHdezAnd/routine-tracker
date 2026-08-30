@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "./api";
+import { apiFetch, ApiError } from "./api";
 
 const TOKEN_STORAGE_KEY = "routine-tracker:token";
 
@@ -30,10 +30,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_STORAGE_KEY));
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading: isLoadingUser } = useQuery({
+  const {
+    data: user,
+    isLoading: isLoadingUser,
+    error: userError,
+  } = useQuery({
     queryKey: ["me", token],
     queryFn: () => apiFetch<CurrentUser>("/auth/me", { token }),
     enabled: token !== null,
+    retry: false,
   });
 
   const login = useCallback(async (email: string, password: string) => {
@@ -61,6 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     queryClient.clear();
   }, [queryClient]);
+
+  useEffect(() => {
+    if (userError instanceof ApiError && userError.status === 401) {
+      logout();
+    }
+  }, [userError, logout]);
 
   return (
     <AuthContext.Provider value={{ token, user, isLoadingUser, login, register, logout }}>
