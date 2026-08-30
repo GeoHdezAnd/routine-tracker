@@ -11,7 +11,7 @@ describe("LoginPage", () => {
     vi.unstubAllGlobals();
   });
 
-  it("logs in successfully, stores the token, and navigates to /routines", async () => {
+  it("logs in successfully, stores the token, and navigates to the dashboard", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
@@ -32,8 +32,19 @@ describe("LoginPage", () => {
             { status: 200 },
           );
         }
-        if (url.endsWith("/routines")) {
-          return new Response(JSON.stringify([]), { status: 200 });
+        if (url.includes("/dashboard")) {
+          return new Response(
+            JSON.stringify({
+              dayStreak: 0,
+              sessionsThisWeek: 0,
+              totalWorkouts: 0,
+              today: null,
+              recentSessions: [],
+              routines: [],
+              readyToProgress: [],
+            }),
+            { status: 200 },
+          );
         }
         return new Response(JSON.stringify({ error: "No encontrado" }), { status: 404 });
       }),
@@ -45,7 +56,7 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "supersecret123" } });
     fireEvent.click(screen.getByRole("button", { name: "Ingresar" }));
 
-    expect(await screen.findByRole("heading", { name: "Rutinas" })).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no tienes nada cargado.")).toBeInTheDocument();
     expect(localStorage.getItem("routine-tracker:token")).toBe("fake-token");
   });
 
