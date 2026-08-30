@@ -1,6 +1,13 @@
 const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-export class ApiError extends Error {}
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
 
 type ApiFetchOptions = {
   method?: string;
@@ -44,7 +51,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
       data && typeof data === "object" && "error" in data
         ? (data as { error: unknown }).error
         : null;
-    throw new ApiError(extractErrorMessage(errorField));
+    throw new ApiError(extractErrorMessage(errorField), response.status);
   }
 
   return data as T;
