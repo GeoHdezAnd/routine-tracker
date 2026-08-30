@@ -82,6 +82,9 @@ describe("RoutinesPage", () => {
     fireEvent.click(screen.getByText("Archivadas"));
 
     expect(await screen.findByText("Push Day")).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: "Restaurar rutina" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Más opciones" }));
+    expect(screen.getByText("Restaurar")).toBeInTheDocument();
+    expect(screen.getByText("Eliminar")).toBeInTheDocument();
   });
 });
