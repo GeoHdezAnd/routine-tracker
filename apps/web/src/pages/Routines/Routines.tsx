@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, ArchiveRestore, Dumbbell, Plus, X } from "lucide-react";
+import { Archive, ArchiveRestore, Dumbbell, Play, Plus, X } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
@@ -67,7 +67,7 @@ export function RoutinesPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-8 pb-24 text-fg">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-4 pb-24 text-fg">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Rutinas</h1>
@@ -125,13 +125,13 @@ export function RoutinesPage() {
           {routines.map((routine) => {
             const color = colorForLabel(routine.name);
             return (
-              <div key={routine.id} className="flex items-center gap-3 px-4 py-3">
-                <span className={`flex size-11 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
+              <div key={routine.id} className="flex items-center gap-3 px-1 py-2">
+                <span className={`flex size-8 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
                   <Dumbbell className={`size-5 ${color.fg}`} />
                 </span>
                 <Link to={`/routines/${routine.id}`} className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{routine.name}</p>
-                  <p className="truncate text-sm text-fg-muted">
+                  <p className="truncate md:text-sm font-semibold">{routine.name}</p>
+                  <p className="truncate text-xs text-fg-muted">
                     Creada el {new Date(routine.createdAt).toLocaleDateString()}
                   </p>
                 </Link>
@@ -144,14 +144,15 @@ export function RoutinesPage() {
                     <ArchiveRestore className="size-5" />
                   </IconButton>
                 ) : (
-                  <>
+                  <div className="flex">
                     <button
                       type="button"
                       disabled={startSession.isPending}
                       onClick={() => startSession.mutate(routine.id)}
-                      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 ${color.soft} ${color.fg}`}
+                      aria-label="Iniciar rutina"
+                      className="shrink-0 rounded-full bg-green-100 m-1 p-2 text-green-600 transition-colors hover:bg-green-200 disabled:opacity-50"
                     >
-                      Iniciar
+                      <Play className="h-4 w-4" fill="currentColor" />
                     </button>
                     <IconButton
                       aria-label="Archivar rutina"
@@ -161,7 +162,7 @@ export function RoutinesPage() {
                     >
                       <Archive className="size-4" />
                     </IconButton>
-                  </>
+                  </div>
                 )}
               </div>
             );

@@ -10,7 +10,7 @@ export function ProtectedLayout() {
   }
 
   return (
-    <div className="pb-16">
+    <div>
       <Outlet />
       <BottomNav />
     </div>

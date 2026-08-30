@@ -231,7 +231,7 @@ export function SessionDetailPage() {
   const availableToAdd = (exercisesData?.data ?? []).filter((exercise) => !addedExerciseIds.has(exercise.id));
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-8 pb-24 text-fg">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 bg-canvas px-4 pt-4 pb-24 text-fg">
       <Link to="/sessions" className="flex items-center gap-0.5 text-sm font-medium text-accent">
         <ChevronLeft className="size-4" />
         Sesiones
