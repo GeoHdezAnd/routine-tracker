@@ -16,6 +16,8 @@ function useDropdownRect(
   contentRef: RefObject<HTMLElement | null>,
 ) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -27,13 +29,13 @@ function useDropdownRect(
     }
 
     function handlePointerDown(event: MouseEvent) {
-      if (!isInside(event.target)) onClose();
+      if (!isInside(event.target)) onCloseRef.current();
     }
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
     }
     function handleScroll(event: Event) {
-      if (!isInside(event.target)) onClose();
+      if (!isInside(event.target)) onCloseRef.current();
     }
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -44,7 +46,8 @@ function useDropdownRect(
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("scroll", handleScroll, true);
     };
-  }, [open, onClose, triggerRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   return rect;
 }
@@ -214,6 +217,8 @@ export function Menu({ items, className = "" }: { items: MenuAction[]; className
         ref={triggerRef}
         type="button"
         aria-label="Más opciones"
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={`flex size-9 shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-surface-muted ${className}`}
       >
@@ -223,13 +228,15 @@ export function Menu({ items, className = "" }: { items: MenuAction[]; className
       {open && rect && (
         <ul
           ref={contentRef}
+          role="menu"
           style={{ top: rect.bottom + 4, right: window.innerWidth - rect.right }}
           className="fixed z-50 min-w-36 overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg"
         >
           {items.map((item) => (
-            <li key={item.label}>
+            <li key={item.label} role="none">
               <button
                 type="button"
+                role="menuitem"
                 disabled={item.disabled}
                 onClick={() => {
                   item.onClick();

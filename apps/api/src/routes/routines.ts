@@ -7,11 +7,13 @@ import {
   RoutineExerciseNotFoundError,
   RoutineNotFoundError,
   addExerciseToRoutine,
+  addRoutineToPlan,
   createRoutine,
   deleteRoutine,
   getRoutineById,
   listRoutinesForUser,
   removeExerciseFromRoutine,
+  removeRoutineFromPlan,
   suggestRepRange,
   updateRoutine,
   updateRoutineExercise,
@@ -131,6 +133,32 @@ routinesRouter.patch("/:id", async (req, res) => {
 routinesRouter.delete("/:id", async (req, res) => {
   try {
     await deleteRoutine(res.locals.userId, req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    if (error instanceof RoutineNotFoundError) {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
+});
+
+routinesRouter.post("/:id/plan", async (req, res) => {
+  try {
+    const period = await addRoutineToPlan(res.locals.userId, req.params.id);
+    res.status(200).json(period);
+  } catch (error) {
+    if (error instanceof RoutineNotFoundError) {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
+});
+
+routinesRouter.delete("/:id/plan", async (req, res) => {
+  try {
+    await removeRoutineFromPlan(res.locals.userId, req.params.id);
     res.status(204).send();
   } catch (error) {
     if (error instanceof RoutineNotFoundError) {

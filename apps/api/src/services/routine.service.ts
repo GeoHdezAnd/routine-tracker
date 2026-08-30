@@ -45,15 +45,22 @@ export async function createRoutine(userId: string, input: RoutineInput) {
       muscleGroups: input.muscleGroups ?? [],
       trainingDays: input.trainingDays ?? [],
       userId,
+      planPeriods: { create: {} },
     },
   });
 }
 
 export async function listRoutinesForUser(userId: string, archived = false) {
-  return prisma.routine.findMany({
+  const routines = await prisma.routine.findMany({
     where: { userId, archived },
     orderBy: { createdAt: "asc" },
+    include: { planPeriods: { where: { endedAt: null }, take: 1 } },
   });
+
+  return routines.map(({ planPeriods, ...routine }) => ({
+    ...routine,
+    isInPlan: planPeriods.length > 0,
+  }));
 }
 
 async function findOwnedRoutine(userId: string, id: string) {
@@ -67,15 +74,38 @@ async function findOwnedRoutine(userId: string, id: string) {
 export async function getRoutineById(userId: string, id: string) {
   await findOwnedRoutine(userId, id);
 
-  return prisma.routine.findUnique({
+  const routine = await prisma.routine.findUnique({
     where: { id },
     include: {
       exercises: {
         orderBy: [{ order: "asc" }, { supersetSlot: "asc" }],
         include: { exercise: true },
       },
+      planPeriods: { where: { endedAt: null }, take: 1 },
     },
   });
+  if (!routine) return routine;
+
+  const { planPeriods, ...rest } = routine;
+  return { ...rest, isInPlan: planPeriods.length > 0 };
+}
+
+export async function addRoutineToPlan(userId: string, id: string) {
+  await findOwnedRoutine(userId, id);
+
+  const openPeriod = await prisma.routinePlanPeriod.findFirst({ where: { routineId: id, endedAt: null } });
+  if (openPeriod) return openPeriod;
+
+  return prisma.routinePlanPeriod.create({ data: { routineId: id } });
+}
+
+export async function removeRoutineFromPlan(userId: string, id: string) {
+  await findOwnedRoutine(userId, id);
+
+  const openPeriod = await prisma.routinePlanPeriod.findFirst({ where: { routineId: id, endedAt: null } });
+  if (!openPeriod) return null;
+
+  return prisma.routinePlanPeriod.update({ where: { id: openPeriod.id }, data: { endedAt: new Date() } });
 }
 
 export async function updateRoutine(

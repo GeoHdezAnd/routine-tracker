@@ -36,6 +36,7 @@ type RoutineDetail = {
   color: string | null;
   muscleGroups: string[];
   trainingDays: string[];
+  isInPlan: boolean;
   exercises: RoutineExercise[];
 };
 
@@ -116,6 +117,15 @@ export function RoutineDetailPage() {
   function invalidateRoutine() {
     void queryClient.invalidateQueries({ queryKey: ["routine", id] });
   }
+
+  const togglePlan = useMutation({
+    mutationFn: (nextInPlan: boolean) =>
+      apiFetch(`/routines/${id}/plan`, { method: nextInPlan ? "POST" : "DELETE", token }),
+    onSuccess: () => {
+      invalidateRoutine();
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
 
   const selectedExercise = exercisesData?.data.find((exercise) => exercise.id === exerciseId);
 
@@ -413,6 +423,15 @@ export function RoutineDetailPage() {
               Editar
             </button>
           </div>
+
+          <Pill
+            active={routine.isInPlan}
+            disabled={togglePlan.isPending}
+            onClick={() => togglePlan.mutate(!routine.isInPlan)}
+            className="self-start"
+          >
+            {routine.isInPlan ? "En tu plan actual" : "Agregar a tu plan"}
+          </Pill>
 
           {isEditingMuscleGroups && (
             <Card>

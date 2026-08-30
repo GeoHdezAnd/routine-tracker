@@ -49,7 +49,7 @@ export async function getDashboard(userId: string, tzOffsetMinutes = 0) {
       },
     }),
     prisma.routine.findMany({
-      where: { userId, archived: false },
+      where: { userId, archived: false, planPeriods: { some: { endedAt: null } } },
       orderBy: { name: "asc" },
       select: {
         id: true,

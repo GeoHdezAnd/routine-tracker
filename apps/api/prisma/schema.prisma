@@ -62,8 +62,19 @@ model Routine {
   archived      Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  exercises RoutineExercise[]
-  sessions  WorkoutSession[]
+  exercises   RoutineExercise[]
+  sessions    WorkoutSession[]
+  planPeriods RoutinePlanPeriod[]
+}
+
+model RoutinePlanPeriod {
+  id        String    @id @default(cuid())
+  routineId String
+  routine   Routine   @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  @@index([routineId])
 }
 
 model RoutineExercise {

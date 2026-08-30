@@ -12,6 +12,7 @@ type Routine = {
   id: string;
   name: string;
   color: string | null;
+  isInPlan: boolean;
   createdAt: string;
 };
 
@@ -92,6 +93,7 @@ export function RoutinesPage() {
                   <p className="truncate md:text-sm font-semibold">{routine.name}</p>
                   <p className="truncate text-xs text-fg-muted">
                     Creada el {new Date(routine.createdAt).toLocaleDateString()}
+                    {routine.isInPlan && " · En tu plan"}
                   </p>
                 </Link>
                 {showArchived ? (
