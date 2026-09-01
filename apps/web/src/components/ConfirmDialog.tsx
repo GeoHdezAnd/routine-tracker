@@ -1,3 +1,4 @@
+import { useLockBodyScroll } from "../lib/useLockBodyScroll";
 import { Button } from "./ui";
 
 type ConfirmDialogProps = {
@@ -21,6 +22,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  useLockBodyScroll(open);
+
   if (!open) return null;
 
   return (

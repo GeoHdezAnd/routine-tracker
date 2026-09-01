@@ -16,6 +16,7 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import {
   ChevronLeft,
+  ChevronRight,
   Dumbbell,
   GripVertical,
   Loader2,
@@ -31,11 +32,13 @@ import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel, colorForRoutine } from "../../lib/colors";
 import { DAY_ORDER, DAY_LABELS, sortDays } from "../../lib/days";
 import { Button, Card, FieldLabel, IconButton, Input, Menu, Pill, Select } from "../../components/ui";
+import { ExercisePickerModal } from "./ExercisePickerModal";
 
 type Exercise = {
   id: string;
   name: string;
   muscleGroup: string;
+  equipmentType: string;
   movementType: MovementType;
 };
 
@@ -77,6 +80,7 @@ export function RoutineDetailPage() {
   const queryClient = useQueryClient();
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [exerciseId, setExerciseId] = useState("");
   const [goal, setGoal] = useState<TrainingGoal>("HYPERTROPHY");
   const [targetSets, setTargetSets] = useState(3);
@@ -603,14 +607,16 @@ export function RoutineDetailPage() {
                 <p className="text-sm font-semibold">Agregar ejercicio</p>
                 <FieldLabel>
                   Ejercicio
-                  <Select value={exerciseId} onChange={setExerciseId}>
-                    <option value="">Elige un ejercicio</option>
-                    {exercisesData?.data.map((exercise) => (
-                      <option key={exercise.id} value={exercise.id}>
-                        {exercise.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <button
+                    type="button"
+                    onClick={() => setShowExercisePicker(true)}
+                    className="flex w-full items-center justify-between rounded-xl border border-border bg-surface px-3 py-2.5 text-left text-sm"
+                  >
+                    <span className={selectedExercise ? "font-medium" : "text-fg-muted"}>
+                      {selectedExercise ? selectedExercise.name : "Elige un ejercicio"}
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-fg-subtle" />
+                  </button>
                 </FieldLabel>
                 {routine.muscleGroups.length > 0 && (
                   <label className="flex items-center gap-1 text-sm text-fg-muted">
@@ -854,6 +860,18 @@ export function RoutineDetailPage() {
                 </Card>
               </SortableContext>
             </DndContext>
+          )}
+
+          {showExercisePicker && (
+            <ExercisePickerModal
+              exercises={exercisesData?.data ?? []}
+              selectedId={exerciseId || null}
+              onSelect={(exercise) => {
+                setExerciseId(exercise.id);
+                setShowExercisePicker(false);
+              }}
+              onClose={() => setShowExercisePicker(false)}
+            />
           )}
         </>
       )}
