@@ -4,6 +4,7 @@ import type { MovementType } from "@routine-tracker/shared";
 import { colorForLabel } from "../../lib/colors";
 import { useLockBodyScroll } from "../../lib/useLockBodyScroll";
 import { CreateExerciseForm } from "../../components/CreateExerciseForm";
+import { ExerciseThumbnail } from "../../components/ExerciseThumbnail";
 import { Input, Pill } from "../../components/ui";
 
 type Exercise = {
@@ -12,6 +13,7 @@ type Exercise = {
   muscleGroup: string;
   equipmentType?: string;
   movementType: MovementType;
+  imageUrl?: string | null;
 };
 
 export function ExercisePickerModal({
@@ -190,6 +192,7 @@ export function ExercisePickerModal({
                       >
                         {checked && <Check className="size-3 text-accent-fg" strokeWidth={3} />}
                       </span>
+                      <ExerciseThumbnail imageUrl={exercise.imageUrl} size="size-8" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{exercise.name}</span>
                         <span className="flex flex-wrap items-center gap-1">

@@ -12,6 +12,7 @@ export type CreatedExercise = {
   muscleGroup: string;
   equipmentType: string;
   movementType: MovementType;
+  imageUrl?: string | null;
 };
 
 export function CreateExerciseForm({
