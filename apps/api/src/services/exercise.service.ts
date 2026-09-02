@@ -9,6 +9,7 @@ type ExerciseInput = {
   muscleGroup: string;
   equipmentType: string;
   movementType: MovementType;
+  imageUrl?: string;
 };
 
 export class ExerciseNotFoundError extends Error {
