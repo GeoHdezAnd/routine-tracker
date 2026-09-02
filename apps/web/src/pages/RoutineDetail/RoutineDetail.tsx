@@ -32,6 +32,7 @@ import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel, colorForRoutine } from "../../lib/colors";
 import { DAY_ORDER, DAY_LABELS, sortDays } from "../../lib/days";
 import { Button, Card, FieldLabel, IconButton, Input, Menu, Pill, Select } from "../../components/ui";
+import { ExerciseThumbnail } from "../../components/ExerciseThumbnail";
 import { ExercisePickerModal } from "./ExercisePickerModal";
 
 type Exercise = {
@@ -40,6 +41,7 @@ type Exercise = {
   muscleGroup: string;
   equipmentType: string;
   movementType: MovementType;
+  imageUrl?: string | null;
 };
 
 type ExercisesResponse = { data: Exercise[] };
@@ -815,7 +817,11 @@ export function RoutineDetailPage() {
                               >
                                 <GripVertical className="size-4" />
                               </button>
-                              <span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />
+                              <ExerciseThumbnail
+                                imageUrl={routineExercise.exercise.imageUrl}
+                                size="size-8"
+                                fallback={<span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />}
+                              />
                               <div className="min-w-0 flex-1">
                                 <p className="truncate font-semibold">{routineExercise.exercise.name}</p>
                                 <div className="flex items-center gap-1.5">

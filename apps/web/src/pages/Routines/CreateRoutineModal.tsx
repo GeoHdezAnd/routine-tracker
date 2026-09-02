@@ -11,9 +11,17 @@ import { colorForKey, colorForLabel } from "../../lib/colors";
 import { DAY_ORDER, DAY_LABELS } from "../../lib/days";
 import { useLockBodyScroll } from "../../lib/useLockBodyScroll";
 import { CreateExerciseForm } from "../../components/CreateExerciseForm";
+import { ExerciseThumbnail } from "../../components/ExerciseThumbnail";
 import { Input, Pill } from "../../components/ui";
 
-type Exercise = { id: string; name: string; muscleGroup: string; equipmentType: string; movementType: MovementType };
+type Exercise = {
+  id: string;
+  name: string;
+  muscleGroup: string;
+  equipmentType: string;
+  movementType: MovementType;
+  imageUrl?: string | null;
+};
 type ExercisesResponse = { data: Exercise[] };
 type Routine = { id: string };
 
@@ -167,7 +175,7 @@ export function CreateRoutineModal({ onClose, onCreated }: { onClose: () => void
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           {step === "details" ? (
-            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 pb-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 pb-3 mt-2">
               <Input
                 placeholder="Nombre de la rutina..."
                 value={name}
@@ -320,6 +328,7 @@ export function CreateRoutineModal({ onClose, onCreated }: { onClose: () => void
                           >
                             {checked && <Check className="size-3 text-accent-fg" strokeWidth={3} />}
                           </span>
+                          <ExerciseThumbnail imageUrl={exercise.imageUrl} size="size-8" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-medium">{exercise.name}</span>
                             <span className="flex flex-wrap items-center gap-1">
