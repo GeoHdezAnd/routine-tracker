@@ -12,13 +12,18 @@
     "test": "NODE_ENV=test vitest run",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "prisma:backfill-images": "tsx prisma/backfill-exercise-images.ts",
+    "prisma:reset-images": "tsx prisma/reset-exercise-images.ts",
+    "prisma:translate-names": "tsx prisma/translate-exercise-names.ts",
+    "prisma:prune-legacy-exercises": "tsx prisma/prune-legacy-exercises.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "@routine-tracker/shared": "workspace:*",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.5.1",
     "cors": "^2.8.6",
     "dotenv": "^16.4.0",
     "express": "^5.1.0",

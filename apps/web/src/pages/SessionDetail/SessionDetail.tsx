@@ -8,6 +8,7 @@ import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
 import { displayToKg, kgToDisplay, unitLabel } from "../../lib/units";
 import { Button, IconButton, Select } from "../../components/ui";
+import { ExerciseThumbnail } from "../../components/ExerciseThumbnail";
 
 type SetLog = {
   id: string;
@@ -27,7 +28,7 @@ type Session = {
   setLogs: SetLog[];
 };
 
-type Exercise = { id: string; name: string; muscleGroup: string };
+type Exercise = { id: string; name: string; muscleGroup: string; imageUrl?: string | null };
 type ExercisesResponse = { data: Exercise[] };
 
 type RoutineExercise = { targetSets: number; exercise: Exercise };
@@ -35,7 +36,13 @@ type RoutineDetail = { name: string; exercises: RoutineExercise[] };
 
 type DraftRow = { key: number; weightDisplay: string; reps: string };
 
-type ExerciseEntry = { exerciseId: string; name: string; muscleGroup: string; targetSets: number | null };
+type ExerciseEntry = {
+  exerciseId: string;
+  name: string;
+  muscleGroup: string;
+  targetSets: number | null;
+  imageUrl?: string | null;
+};
 
 function formatElapsed(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -98,6 +105,7 @@ export function SessionDetailPage() {
       name: re.exercise.name,
       muscleGroup: re.exercise.muscleGroup,
       targetSets: re.targetSets,
+      imageUrl: re.exercise.imageUrl,
     })) ?? [];
 
   useEffect(() => {
@@ -219,7 +227,13 @@ export function SessionDetailPage() {
     .filter((exId) => !routineExerciseEntries.some((entry) => entry.exerciseId === exId))
     .map((exId) => {
       const exercise = exerciseById.get(exId);
-      return { exerciseId: exId, name: exercise?.name ?? exId, muscleGroup: exercise?.muscleGroup ?? "", targetSets: null };
+      return {
+        exerciseId: exId,
+        name: exercise?.name ?? exId,
+        muscleGroup: exercise?.muscleGroup ?? "",
+        targetSets: null,
+        imageUrl: exercise?.imageUrl,
+      };
     });
 
   const entries = [...routineExerciseEntries, ...extraEntries].filter(
@@ -282,7 +296,11 @@ export function SessionDetailPage() {
           return (
             <div key={entry.exerciseId} className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm">
               <div className="mb-3 flex items-center gap-2">
-                <span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />
+                <ExerciseThumbnail
+                  imageUrl={entry.imageUrl}
+                  size="size-8"
+                  fallback={<span className={`size-2.5 shrink-0 rounded-full ${color.dot}`} />}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{entry.name}</p>
                   {entry.muscleGroup && (

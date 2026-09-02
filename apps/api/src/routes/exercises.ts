@@ -21,6 +21,8 @@ const exerciseSchema = z.object({
   muscleGroup: z.string().min(1),
   equipmentType: z.string().min(1),
   movementType: z.enum(["COMPOUND", "ISOLATION"]),
+  // Images are backfilled separately (see prisma/backfill-exercise-images.ts), not user-uploaded at creation time.
+  imageUrl: z.string().min(1).optional(),
 });
 
 const updateExerciseSchema = exerciseSchema.partial();

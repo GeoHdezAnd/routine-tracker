@@ -52,7 +52,7 @@ export function LoginPage() {
           Ingresar
         </Button>
         <p className="text-center text-xs text-fg-muted">
-          Si ves un error o la app no responde, recargá la página y volvé a intentar: el servidor puede tardar unos segundos en despertar.
+          Si ves un error o la app no responde, recargá la página y vuelve a intentar: el servidor puede tardar unos segundos en despertar.
         </p>
       </form>
     </main>

@@ -9,6 +9,7 @@ import { apiFetch, ApiError } from "../../lib/api";
 import { colorForLabel } from "../../lib/colors";
 import { kgToDisplay, unitLabel } from "../../lib/units";
 import { Button, Card, FieldLabel, IconButton, Input, Menu, Pill, Select } from "../../components/ui";
+import { ExerciseThumbnail } from "../../components/ExerciseThumbnail";
 
 type Exercise = {
   id: string;
@@ -16,6 +17,7 @@ type Exercise = {
   muscleGroup: string;
   equipmentType: string;
   movementType: MovementType;
+  imageUrl?: string | null;
   ownerId: string | null;
   personalRecord: { weightKg: number; reps: number } | null;
 };
@@ -253,9 +255,15 @@ export function ExercisesPage() {
                   const isEditing = editingId === exercise.id;
                   return (
                     <div key={exercise.id} className="flex items-center gap-3 px-4 py-3">
-                      <span className={`flex size-10 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
-                        <Dumbbell className={`size-5 ${color.fg}`} />
-                      </span>
+                      <ExerciseThumbnail
+                        imageUrl={exercise.imageUrl}
+                        size="size-10"
+                        fallback={
+                          <span className={`flex size-10 shrink-0 items-center justify-center rounded-full ${color.soft}`}>
+                            <Dumbbell className={`size-5 ${color.fg}`} />
+                          </span>
+                        }
+                      />
 
                       {isEditing ? (
                         <form

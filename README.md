@@ -78,6 +78,7 @@ no editables). Es idempotente — cada corrida borra los ejercicios
 globales existentes y reinserta el set curado desde cero, sin tocar
 ejercicios custom de usuarios reales (`ownerId` no nulo).
 
+
 ## Scripts
 
 | Comando           | Descripción                              |
