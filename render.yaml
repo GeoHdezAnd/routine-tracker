@@ -7,7 +7,7 @@ services:
     type: web
     runtime: docker
     plan: free
-    branch: release/quality
+    branch: main
     autoDeployTrigger: commit
     # Contexto de build = raíz del repo, porque el Dockerfile hace
     # COPY pnpm-workspace.yaml / packages/shared desde ahí.
