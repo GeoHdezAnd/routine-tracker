@@ -78,6 +78,21 @@ tiempo de build/CI). Los valores se normalizan con
 (`ownerId: null`) y el seed es idempotente: hace upsert por `slug`, sin
 tocar ejercicios custom de usuarios (`ownerId` no nulo).
 
+Flujo cuando se regenera el catálogo (scrape -> imágenes -> seed):
+
+```bash
+pnpm --filter @routine-tracker/api prisma:scrape-exercises
+pnpm --filter @routine-tracker/api prisma:upload-exercise-images
+pnpm --filter @routine-tracker/api prisma:seed
+```
+
+`prisma:upload-exercise-images` sube cada imagen a tu Cloudinary
+(`gytracker/exercises/<slug>`, requiere `CLOUDINARY_CLOUD_NAME`,
+`CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` en `apps/api/.env`) y
+reescribe `imageUrl` en el JSON, guardando el original en `sourceImageUrl`.
+Es idempotente (reusa lo ya subido); con `--force` (`... prisma:upload-exercise-images -- --force`) sobrescribe los assets existentes desde `sourceImageUrl` e invalida el caché del CDN. El seed usa `imageUrl`, así que
+cualquier base (local o QA) queda con URLs de Cloudinary sin pasos extra.
+
 Para ver la UI con datos realistas en local (solo dev, rechaza hosts no
 locales y `NODE_ENV=production`; requiere el catálogo ya cargado):
 
