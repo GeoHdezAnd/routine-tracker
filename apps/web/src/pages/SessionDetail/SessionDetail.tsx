@@ -79,7 +79,7 @@ export function SessionDetailPage() {
 
   const { data: exercisesData } = useQuery({
     queryKey: ["exercises-for-session", token],
-    queryFn: () => apiFetch<ExercisesResponse>("/exercises?limit=100", { token }),
+    queryFn: () => apiFetch<ExercisesResponse>("/exercises?limit=300", { token }),
   });
 
   const isFinished = session?.finishedAt !== null && session?.finishedAt !== undefined;

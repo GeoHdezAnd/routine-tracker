@@ -56,7 +56,7 @@ export function ExercisesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  const query = new URLSearchParams({ limit: "100" });
+  const query = new URLSearchParams({ limit: "300" });
   if (movementType) query.set("movementType", movementType);
 
   const { data, isLoading, error } = useQuery({

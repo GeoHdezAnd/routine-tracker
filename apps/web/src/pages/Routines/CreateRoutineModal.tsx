@@ -48,7 +48,7 @@ export function CreateRoutineModal({ onClose, onCreated }: { onClose: () => void
 
   const { data: exercisesData } = useQuery({
     queryKey: ["exercises-for-new-routine", token],
-    queryFn: () => apiFetch<ExercisesResponse>("/exercises?limit=100", { token }),
+    queryFn: () => apiFetch<ExercisesResponse>("/exercises?limit=300", { token }),
   });
 
   const { data: availableMuscleGroups } = useQuery({

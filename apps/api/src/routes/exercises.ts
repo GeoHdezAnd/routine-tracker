@@ -38,7 +38,7 @@ const exerciseSchema = z.object({
 
 const updateExerciseSchema = exerciseSchema.partial();
 
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 300;
 const DEFAULT_LIMIT = 20;
 
 const listExercisesQuerySchema = z.object({

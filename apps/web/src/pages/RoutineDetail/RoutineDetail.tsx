@@ -127,8 +127,8 @@ export function RoutineDetailPage() {
     queryKey: ["exercises-for-routine", token, filterByMuscleGroups],
     queryFn: () => {
       const query = filterByMuscleGroups
-        ? `?muscleGroup=${filterByMuscleGroups.map(encodeURIComponent).join(",")}&limit=100`
-        : "?limit=100";
+        ? `?muscleGroup=${filterByMuscleGroups.map(encodeURIComponent).join(",")}&limit=300`
+        : "?limit=300";
       return apiFetch<ExercisesResponse>(`/exercises${query}`, { token });
     },
     enabled: showAddForm,
