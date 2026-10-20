@@ -44,6 +44,14 @@ model Exercise {
   equipmentType String
   movementType  MovementType
   imageUrl      String?
+  // Guide fields, filled for catalog exercises seeded from simplyfitness.com.
+  // slug is the stable seed key (null for user-created exercises).
+  slug             String?  @unique
+  startPosition    String?
+  execution        String?
+  equipment        String[] @default([])
+  primaryMuscles   String[] @default([])
+  secondaryMuscles String[] @default([])
   ownerId       String?
   owner         User?        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt     DateTime     @default(now())

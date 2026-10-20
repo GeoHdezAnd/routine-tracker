@@ -55,6 +55,51 @@ describe("POST /exercises", () => {
     });
   });
 
+  it("accepts optional guide fields and defaults them when omitted", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const withGuide = await request(app)
+      .post("/exercises")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        name: "Barbell Squat",
+        muscleGroup: "Legs",
+        equipmentType: "Barbell",
+        movementType: "COMPOUND",
+        execution: "Squat down and stand up.",
+        primaryMuscles: ["Quads"],
+      });
+    expect(withGuide.status).toBe(201);
+    expect(withGuide.body).toMatchObject({
+      slug: null,
+      execution: "Squat down and stand up.",
+      primaryMuscles: ["Quads"],
+      equipment: [],
+      secondaryMuscles: [],
+    });
+  });
+
+  it("rejects values beyond the size bounds and invalid image URLs", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+    const valid = { name: "Barbell Squat", muscleGroup: "Legs", equipmentType: "Barbell", movementType: "COMPOUND" };
+    const post = (body: Record<string, unknown>) =>
+      request(app)
+        .post("/exercises")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ ...valid, ...body });
+
+    expect((await post({ name: "a".repeat(101) })).status).toBe(400);
+    expect((await post({ execution: "a".repeat(10001) })).status).toBe(400);
+    expect((await post({ startPosition: "a".repeat(10001) })).status).toBe(400);
+    expect((await post({ primaryMuscles: Array(21).fill("Quads") })).status).toBe(400);
+    expect((await post({ equipment: ["a".repeat(101)] })).status).toBe(400);
+    expect((await post({ imageUrl: "not a url" })).status).toBe(400);
+    expect((await post({ imageUrl: "https://example.com/" + "a".repeat(2100) })).status).toBe(400);
+    expect((await post({ imageUrl: "https://example.com/squat.png" })).status).toBe(201);
+  });
+
   it("returns 401 without a token", async () => {
     const response = await request(createApp()).post("/exercises").send({
       name: "Barbell Squat",
@@ -126,7 +171,7 @@ describe("GET /exercises", () => {
 
     const response = await request(app)
       .get("/exercises")
-      .query({ limit: 100 })
+      .query({ limit: 100, muscleGroup: "Chest,Arms" })
       .set("Authorization", `Bearer ${ownerToken}`);
 
     expect(response.status).toBe(200);
@@ -164,7 +209,7 @@ describe("GET /exercises", () => {
 
     const response = await request(app)
       .get("/exercises")
-      .query({ limit: 100 })
+      .query({ limit: 100, muscleGroup: "Arms" })
       .set("Authorization", `Bearer ${ownerToken}`);
 
     const byId = new Map(
@@ -193,7 +238,7 @@ describe("GET /exercises", () => {
 
     const response = await request(app)
       .get("/exercises")
-      .query({ limit: 100 })
+      .query({ limit: 100, muscleGroup: "Back" })
       .set("Authorization", `Bearer ${ownerToken}`);
 
     const ownerView = response.body.data.find((exercise: { id: string }) => exercise.id === globalExercise.id);
@@ -431,6 +476,40 @@ describe("GET /exercises/:id", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({ name: "GETONE-test Global" });
+  });
+
+  it("returns the full guide for a catalog exercise", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, ownerEmail);
+    const catalogExercise = await prisma.exercise.create({
+      data: {
+        name: "GETONE-test Guide",
+        slug: "getone-test-guide",
+        muscleGroup: "Pecho",
+        equipmentType: "Barra",
+        movementType: "COMPOUND",
+        startPosition: "Tumbado en el banco.",
+        execution: "Baja la barra al pecho y empuja.",
+        equipment: ["Barra", "Banco"],
+        primaryMuscles: ["Pectorales"],
+        secondaryMuscles: ["Tríceps"],
+        ownerId: null,
+      },
+    });
+
+    const response = await request(app)
+      .get(`/exercises/${catalogExercise.id}`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      slug: "getone-test-guide",
+      startPosition: "Tumbado en el banco.",
+      execution: "Baja la barra al pecho y empuja.",
+      equipment: ["Barra", "Banco"],
+      primaryMuscles: ["Pectorales"],
+      secondaryMuscles: ["Tríceps"],
+    });
   });
 
   it("returns 404 for another user's custom exercise", async () => {

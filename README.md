@@ -70,13 +70,24 @@ pnpm --filter @routine-tracker/api prisma:migrate
 pnpm --filter @routine-tracker/api prisma:seed
 ```
 
-`prisma:seed` carga ~95 ejercicios en español (catálogo curado desde la
-API de [wger.de](https://wger.de), snapshot versionado en
-`apps/api/prisma/seed-data/wger-exercises.json`, sin depender de red en
-tiempo de build/CI) con `ownerId: null` (visibles para cualquier usuario,
-no editables). Es idempotente — cada corrida borra los ejercicios
-globales existentes y reinserta el set curado desde cero, sin tocar
-ejercicios custom de usuarios reales (`ownerId` no nulo).
+`prisma:seed` carga 143 ejercicios en español con guía (posición inicial,
+ejecución, equipo y músculos) desde un snapshot de simplyfitness.com
+versionado en `apps/api/prisma/seed-data/simplyfitness.json` (sin red en
+tiempo de build/CI). Los valores se normalizan con
+`apps/api/prisma/exercise-normalize.ts`. Los ejercicios son globales
+(`ownerId: null`) y el seed es idempotente: hace upsert por `slug`, sin
+tocar ejercicios custom de usuarios (`ownerId` no nulo).
+
+Para ver la UI con datos realistas en local (solo dev, rechaza hosts no
+locales y `NODE_ENV=production`; requiere el catálogo ya cargado):
+
+```bash
+pnpm --filter @routine-tracker/api prisma:seed-demo
+```
+
+Crea el usuario `demo@routine-tracker.dev` / `demo12345` con 4 rutinas y
+~8 semanas de sesiones con sobrecarga progresiva. Es idempotente: borra y
+recrea solo los datos de ese usuario.
 
 
 ## Scripts

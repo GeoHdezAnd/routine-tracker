@@ -9,6 +9,7 @@ import { ExercisesPage } from "./pages/Exercises/Exercises";
 import { SessionsPage } from "./pages/Sessions/Sessions";
 import { SessionDetailPage } from "./pages/SessionDetail/SessionDetail";
 import { DashboardPage } from "./pages/Dashboard/Dashboard";
+import { ExerciseDetailPage } from "./pages/ExerciseDetail/ExerciseDetail";
 import { ExerciseProgressPage } from "./pages/ExerciseProgress/ExerciseProgress";
 import { SettingsPage } from "./pages/Settings/Settings";
 
@@ -22,6 +23,7 @@ export const routes: RouteObject[] = [
       { path: "/routines", element: <RoutinesPage /> },
       { path: "/routines/:id", element: <RoutineDetailPage /> },
       { path: "/exercises", element: <ExercisesPage /> },
+      { path: "/exercises/:id", element: <ExerciseDetailPage /> },
       { path: "/exercises/:id/progress", element: <ExerciseProgressPage /> },
       { path: "/sessions", element: <SessionsPage /> },
       { path: "/sessions/:id", element: <SessionDetailPage /> },

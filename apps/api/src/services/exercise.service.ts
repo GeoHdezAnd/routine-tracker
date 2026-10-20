@@ -10,6 +10,11 @@ type ExerciseInput = {
   equipmentType: string;
   movementType: MovementType;
   imageUrl?: string;
+  startPosition?: string;
+  execution?: string;
+  equipment?: string[];
+  primaryMuscles?: string[];
+  secondaryMuscles?: string[];
 };
 
 export class ExerciseNotFoundError extends Error {
@@ -75,7 +80,7 @@ export async function listExercisesForUser(userId: string, filters: ListExercise
   const [rows, total] = await Promise.all([
     prisma.exercise.findMany({
       where,
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       skip: filters.offset,
       take: filters.limit,
     }),

@@ -16,13 +16,24 @@ import { getExerciseProgress } from "../services/progress.service.js";
 
 export const exercisesRouter = Router();
 
+const MAX_LABEL_LENGTH = 100;
+const MAX_TEXT_LENGTH = 10000;
+const MAX_LIST_ITEMS = 20;
+
+const labelList = z.array(z.string().min(1).max(MAX_LABEL_LENGTH)).max(MAX_LIST_ITEMS);
+
 const exerciseSchema = z.object({
-  name: z.string().min(1),
-  muscleGroup: z.string().min(1),
-  equipmentType: z.string().min(1),
+  name: z.string().min(1).max(MAX_LABEL_LENGTH),
+  muscleGroup: z.string().min(1).max(MAX_LABEL_LENGTH),
+  equipmentType: z.string().min(1).max(MAX_LABEL_LENGTH),
   movementType: z.enum(["COMPOUND", "ISOLATION"]),
-  // Images are backfilled separately (see prisma/backfill-exercise-images.ts), not user-uploaded at creation time.
-  imageUrl: z.string().min(1).optional(),
+  imageUrl: z.url().max(2048).optional(),
+  // Guide fields are optional: user-created exercises may omit them.
+  startPosition: z.string().min(1).max(MAX_TEXT_LENGTH).optional(),
+  execution: z.string().min(1).max(MAX_TEXT_LENGTH).optional(),
+  equipment: labelList.optional(),
+  primaryMuscles: labelList.optional(),
+  secondaryMuscles: labelList.optional(),
 });
 
 const updateExerciseSchema = exerciseSchema.partial();
