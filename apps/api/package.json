@@ -14,13 +14,15 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
     "prisma:seed-demo": "tsx prisma/seed-demo.ts",
-    "prisma:scrape-exercises": "tsx prisma/scrape-simplyfitness.ts"
+    "prisma:scrape-exercises": "tsx prisma/scrape-simplyfitness.ts",
+    "prisma:upload-exercise-images": "tsx prisma/upload-exercise-images.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "@routine-tracker/shared": "workspace:*",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
     "dotenv": "^16.4.0",
     "express": "^5.1.0",

@@ -386,17 +386,31 @@ describe("GET /exercises filters and pagination", () => {
     expect(secondPage.body.total).toBe(2);
   });
 
-  it("clamps a limit above the maximum down to 100", async () => {
+  it("clamps a limit above the maximum down to 300", async () => {
     const app = createApp();
     const token = await registerAndLogin(app, email);
 
     const response = await request(app)
       .get("/exercises")
-      .query({ limit: 500 })
+      .query({ limit: 1000 })
       .set("Authorization", `Bearer ${token}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.limit).toBe(100);
+    expect(response.body.limit).toBe(300);
+  });
+
+  it("returns up to 300 rows in a single page when limit=300", async () => {
+    const app = createApp();
+    const token = await registerAndLogin(app, email);
+
+    const response = await request(app)
+      .get("/exercises")
+      .query({ limit: 300 })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.limit).toBe(300);
+    expect(response.body.data).toHaveLength(Math.min(response.body.total, 300));
   });
 });
 

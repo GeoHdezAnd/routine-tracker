@@ -13,6 +13,8 @@ export interface RawExercise {
   primaryMuscles: string[];
   secondaryMuscles: string[];
   imageUrl: string;
+  /** Original Simply Fitness image; set by upload-exercise-images. */
+  sourceImageUrl?: string;
   sourceUrl: string;
 }
 

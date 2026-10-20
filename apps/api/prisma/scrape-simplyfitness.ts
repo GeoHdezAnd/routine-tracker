@@ -1,6 +1,8 @@
 /**
  * One-off scraper: Simply Fitness (ES) exercise guides -> prisma/seed-data/simplyfitness.json
  * Run: pnpm --filter @routine-tracker/api prisma:scrape-exercises
+ * NOTE: regenerating the JSON resets imageUrl to the Simply Fitness CDN; rerun
+ * prisma:upload-exercise-images afterwards so exercises use Cloudinary URLs.
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
